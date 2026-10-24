@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Copyright 2026 Málaga Space Team
 # SPDX-License-Identifier: GPL-3.0-or-later
-# GRC Web launcher. Creates its Python environment on first use, on top of the
-# Python that has GNU Radio installed (its packages stay visible).
+# GRC Web launcher. Runs with the Python that has GNU Radio installed. If that
+# Python lacks aiohttp, a virtual environment is created on top of it (its
+# packages stay visible) and aiohttp is installed there.
 #
 #   ./grc-web user add <name> --admin     create a user
 #   ./grc-web serve                        start on http://127.0.0.1:8410
@@ -25,22 +26,29 @@ find_python() {
     return 1
 }
 
-if [ ! -x "$VENV/bin/python" ]; then
+if [ -x "$VENV/bin/python" ]; then
+    PYTHON="$VENV/bin/python"
+else
     PYTHON="$(find_python)" || {
         echo "No Python with GNU Radio Companion found." >&2
         echo "Install GNU Radio 3.10 (with GRC), or point GRCWEB_PYTHON to its python3." >&2
         exit 1
     }
-    echo "Creating $VENV with $PYTHON ..." >&2
-    "$PYTHON" -m venv --system-site-packages "$VENV" || {
-        echo "Could not create the virtual environment (Debian/Ubuntu: sudo apt install python3-venv)." >&2
-        exit 1
-    }
+    # nothing to install when the distribution provides aiohttp (python3-aiohttp)
+    if ! "$PYTHON" -c 'import aiohttp' >/dev/null 2>&1; then
+        echo "Creating $VENV with $PYTHON ..." >&2
+        "$PYTHON" -m venv --system-site-packages "$VENV" || {
+            rm -rf "$VENV"
+            echo "Could not create a virtual environment to install aiohttp." >&2
+            echo "Debian/Ubuntu: sudo apt install python3-aiohttp   (or python3-venv)" >&2
+            exit 1
+        }
+        PYTHON="$VENV/bin/python"
+    fi
 fi
-# aiohttp may already come from the distribution (python3-aiohttp); otherwise install it
-if ! "$VENV/bin/python" -c 'import aiohttp' >/dev/null 2>&1; then
-    "$VENV/bin/python" -m pip install --quiet --disable-pip-version-check -r "$HERE/requirements.txt"
+if ! "$PYTHON" -c 'import aiohttp' >/dev/null 2>&1; then
+    "$PYTHON" -m pip install --quiet --disable-pip-version-check -r "$HERE/requirements.txt"
 fi
 
 export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
-exec "$VENV/bin/python" -m grcweb "$@"
+exec "$PYTHON" -m grcweb "$@"
