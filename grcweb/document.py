@@ -300,11 +300,19 @@ class Document:
         block = self.block(name)
         if checkpoint:
             self.checkpoint()
-        for key, value in values.items():
-            if key not in block.params:
-                continue
-            block.params[key].set_value(value)
-        self.refresh()
+        # A rewrite can replace parameters: with GRC workflows, changing the
+        # generate options gives the Options block another parameter set. Apply
+        # the values again until they stick.
+        for _ in range(3):
+            changed = False
+            for key, value in values.items():
+                param = block.params.get(key)
+                if param is not None and param.get_value() != str(value):
+                    param.set_value(value)
+                    changed = True
+            if not changed:
+                break
+            self.refresh()
         try:
             return self.fg.get_block(values.get('id', name)).name
         except KeyError:

@@ -17,9 +17,11 @@ import json
 import logging
 import os
 import secrets
+import shlex
 import shutil
 import signal
 import struct
+import sys
 import time
 
 from . import layout
@@ -45,6 +47,15 @@ def _die_with_parent():
         pass
 
 
+def run_command(fg, file_path):
+    """The command line of the flow graph's "Run Command" option, as GRC runs it."""
+    try:
+        template = fg.get_option('run_command') or '{python} -u {filename}'
+    except KeyError:
+        template = '{python} -u {filename}'
+    return shlex.split(template.format(python=shlex.quote(sys.executable), filename=shlex.quote(file_path)))
+
+
 def prepare(platform, data, grc_path, out_dir):
     """Build the runnable flow graph. Returns (file_path, manifest, runtime_info, messages)."""
     messages = []
@@ -56,16 +67,20 @@ def prepare(platform, data, grc_path, out_dir):
         generate_options = options['generate_options'].get_value()
         if generate_options.startswith('hb'):
             raise OpError('This flow graph is a hier block: use Generate to build it')
-        if generate_options == 'qt_gui':
-            options['generate_options'].set_value('no_gui')
-            # a Qt window stays open until it is closed; do the same
-            options['run_options'].set_value('prompt')
-        elif generate_options != 'no_gui':
+        if generate_options not in ('qt_gui', 'no_gui'):
             raise OpError('Generate option {!r} is not supported in the browser'.format(generate_options))
         if 'output_language' in options and options['output_language'].get_value() != 'python':
             options['output_language'].set_value('python')
             messages.append('>>> Note: running the C++ flow graph through its Python templates\n')
+        options['generate_options'].set_value('no_gui')
+        # GRC versions with workflows give the Options block the parameters of
+        # the selected workflow when it is rewritten: look them up again
         fg.rewrite()
+        options = fg.options_block.params
+        if generate_options == 'qt_gui' and 'run_options' in options:
+            # a Qt window stays open until it is closed; do the same
+            options['run_options'].set_value('prompt')
+            fg.rewrite()
         fg.validate()
         errors = fg.get_error_messages()
         if errors:
@@ -74,7 +89,7 @@ def prepare(platform, data, grc_path, out_dir):
         info = layout.runtime_info(fg)
         generator = platform.Generator(fg, out_dir)
         generator.write()
-        command = fg.get_run_command(generator.file_path, split=True)
+        command = run_command(fg, generator.file_path)
         title = fg.get_option('title') or fg.get_option('id')
     manifest['title'] = title
     return generator.file_path, command, manifest, info, messages
