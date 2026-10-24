@@ -1,0 +1,16 @@
+# systemd user service. Install with:
+#   mkdir -p ~/.config/systemd/user && cp contrib/grc-web.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now grc-web
+#   loginctl enable-linger $USER     # keep it running after logging out
+[Unit]
+Description=GRC Web (GNU Radio Companion in the browser)
+After=network-online.target
+
+[Service]
+# Adjust the path to where grc-web was cloned, and the options (e.g. --host 0.0.0.0 --tls)
+ExecStart=%h/grc-web/grc-web serve
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target

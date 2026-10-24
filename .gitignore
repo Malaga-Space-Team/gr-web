@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+*.pyc
+# files written by "Generate" while testing
+tests/flowgraphs/*.py

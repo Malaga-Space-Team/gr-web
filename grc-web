@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# GRC Web launcher. Creates its Python environment on first use, on top of the
+# Python that has GNU Radio installed (its packages stay visible).
+#
+#   ./grc-web user add <name> --admin     create a user
+#   ./grc-web serve                        start on http://127.0.0.1:8410
+#   ./grc-web --help
+set -euo pipefail
+
+HERE="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+VENV="$HERE/.venv"
+
+find_python() {
+    local candidate
+    for candidate in "${GRCWEB_PYTHON:-}" /usr/bin/python3 /usr/local/bin/python3 python3; do
+        [ -n "$candidate" ] || continue
+        if command -v "$candidate" >/dev/null 2>&1 &&
+           "$candidate" -c 'import gnuradio.grc.core.platform' >/dev/null 2>&1; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+if [ ! -x "$VENV/bin/python" ]; then
+    PYTHON="$(find_python)" || {
+        echo "No Python with GNU Radio found (set GRCWEB_PYTHON=/path/to/python3)." >&2
+        exit 1
+    }
+    echo "Creating $VENV with $PYTHON ..." >&2
+    "$PYTHON" -m venv --system-site-packages "$VENV"
+    "$VENV/bin/pip" install --quiet -r "$HERE/requirements.txt"
+fi
+
+export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"
+exec "$VENV/bin/python" -m grcweb "$@"

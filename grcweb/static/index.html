@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRC Web</title>
+<link rel="icon" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/css/app.css">
+<script type="module" src="/static/js/editor/main.js"></script>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="topbar" id="topbar"></div>
+  <div class="tabs" id="tabs"></div>
+  <div class="workspace" id="workspace">
+    <div class="main-col">
+      <div class="canvas-wrap" id="canvas" tabindex="-1">
+        <div class="canvas-hud" id="hud"></div>
+      </div>
+      <div class="splitter-h" id="split-bottom"></div>
+      <div class="bottom" id="bottom">
+        <div class="panel">
+          <div class="panel-head"><span>Console</span><span class="sp"></span>
+            <button class="btn small" type="button" id="console-clear">Clear</button></div>
+          <pre class="console" id="console"></pre>
+        </div>
+        <div class="splitter-v" id="split-vars"></div>
+        <div class="panel vars-panel">
+          <div class="panel-head"><span>Variables</span><span class="sp"></span>
+            <button class="btn small" type="button" id="add-var">+ Variable</button>
+            <button class="btn small" type="button" id="add-import">+ Import</button></div>
+          <div class="vars" id="vars"></div>
+        </div>
+      </div>
+      <div class="statusbar" id="status"></div>
+    </div>
+    <div class="splitter-v" id="split-side"></div>
+    <div class="side" id="side"></div>
+  </div>
+</div>
+</body>
+</html>

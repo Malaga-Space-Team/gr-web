@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grc-web"
+dynamic = ["version"]
+description = "GNU Radio Companion in the browser, on top of the unmodified GRC core"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "GPL-3.0-or-later" }
+dependencies = ["aiohttp>=3.9"]
+
+[project.scripts]
+grc-web = "grcweb.__main__:main"
+
+[tool.setuptools]
+packages = ["grcweb", "grcweb.runtime"]
+
+[tool.setuptools.dynamic]
+version = { attr = "grcweb.__version__" }
+
+[tool.setuptools.package-data]
+grcweb = ["static/*", "static/**/*"]

@@ -1,0 +1,452 @@
+options:
+  parameters:
+    author: ''
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: web_message_widgets
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: '''Message widgets'''
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: check
+  id: variable_qtgui_msgcheckbox
+  parameters:
+    cellalignment: '1'
+    comment: ''
+    gui_hint: 0,3
+    initPressed: 'False'
+    label: '''Check'''
+    outputmsgname: value
+    pressed: '1'
+    released: '0'
+    type: int
+    value: '0'
+    verticalalignment: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 320]
+    rotation: 0
+    state: enabled
+- name: dial
+  id: variable_qtgui_dial_control
+  parameters:
+    comment: ''
+    gui_hint: 1,0
+    label: '''Dial'''
+    maximum: '100'
+    minimum: '0'
+    minsize: '100'
+    outputmsgname: value
+    relBackgroundColor: default
+    scaleFactor: '1'
+    showvalue: 'False'
+    type: int
+    value: '25'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 416]
+    rotation: 0
+    state: enabled
+- name: qtgui_dialgauge_0
+  id: qtgui_dialgauge
+  parameters:
+    affinity: ''
+    alias: ''
+    backgroundColor: white
+    barColor: blue
+    comment: ''
+    fontColor: black
+    gui_hint: 2,2
+    label: '''Gauge'''
+    maximum: '100'
+    minimum: '0'
+    msize: '100'
+    position: '1'
+    showValue: 'False'
+    type: int
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 920]
+    rotation: 0
+    state: enabled
+- name: qtgui_levelgauge_0
+  id: qtgui_levelgauge
+  parameters:
+    affinity: ''
+    alias: ''
+    backgroundColor: default
+    barColor: default
+    comment: ''
+    fontColor: default
+    gui_hint: 2,1
+    isVertical: 'True'
+    label: '''Level'''
+    maximum: '100'
+    minimum: '0'
+    msize: '100'
+    position: '1'
+    scaleFactor: '1'
+    showValue: 'False'
+    type: int
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 816]
+    rotation: 0
+    state: enabled
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '32000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [200, 12]
+    rotation: 0
+    state: enabled
+- name: switch
+  id: variable_qtgui_toggle_switch
+  parameters:
+    cellalignment: '1'
+    comment: ''
+    gui_hint: 0,2
+    initPressed: 'False'
+    label: '''Switch'''
+    outputmsgname: value
+    position: '4'
+    pressed: '1'
+    released: '0'
+    switchOffBackground: gray
+    switchOnBackground: green
+    type: int
+    value: '0'
+    verticalalignment: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 224]
+    rotation: 0
+    state: enabled
+- name: toggle
+  id: variable_qtgui_toggle_button_msg
+  parameters:
+    comment: ''
+    gui_hint: 0,1
+    initPressed: 'False'
+    label: '''Toggle'''
+    outputmsgname: value
+    pressBackgroundColor: default
+    pressFontColor: default
+    pressed: '1'
+    relBackgroundColor: default
+    relFontColor: default
+    released: '0'
+    type: int
+    value: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 120]
+    rotation: 0
+    state: enabled
+- name: tuner
+  id: qtgui_msgdigitalnumbercontrol
+  parameters:
+    ThousandsSeparator: ','
+    affinity: ''
+    alias: ''
+    comment: ''
+    gui_hint: 1,1,1,2
+    lbl: '''Tuner'''
+    maxFreqHz: 1700e6
+    maxoutbuf: '0'
+    minFreqHz: 30e6
+    minoutbuf: '0'
+    outputmsgname: freq
+    readOnly: 'False'
+    relBackgroundColor: black
+    relFontColor: white
+    value: 100e6
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 520]
+    rotation: 0
+    state: enabled
+- name: blocks_message_debug_0
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    en_uvec: 'True'
+    log_level: info
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [704, 304]
+    rotation: 0
+    state: enabled
+- name: blocks_message_strobe_0
+  id: blocks_message_strobe
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    msg: pmt.cons(pmt.intern('state'), pmt.from_bool(True))
+    period: '500'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [304, 704]
+    rotation: 0
+    state: enabled
+- name: blocks_message_strobe_1
+  id: blocks_message_strobe
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    msg: pmt.cons(pmt.intern('value'), pmt.from_double(63.0))
+    period: '300'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [304, 816]
+    rotation: 0
+    state: enabled
+- name: blocks_message_strobe_2
+  id: blocks_message_strobe
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    msg: pmt.cons(pmt.intern('angle'), pmt.from_double(135.0))
+    period: '300'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [304, 1024]
+    rotation: 0
+    state: enabled
+- name: blocks_message_strobe_3
+  id: blocks_message_strobe
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    msg: pmt.cons(pmt.intern('radius'), pmt.from_double(55.0))
+    period: '300'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [304, 1120]
+    rotation: 0
+    state: enabled
+- name: blocks_message_strobe_4
+  id: blocks_message_strobe
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    msg: 'pmt.cons(pmt.to_pmt({''az'': 120.0, ''el'': 35.0}), pmt.PMT_NIL)'
+    period: '300'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [304, 1216]
+    rotation: 0
+    state: enabled
+- name: edit
+  id: qtgui_edit_box_msg
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    gui_hint: 1,3
+    is_pair: 'True'
+    is_static: 'True'
+    key: '''cmd'''
+    label: '''Edit'''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    type: string
+    value: '''hello'''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 624]
+    rotation: 0
+    state: enabled
+- name: push
+  id: variable_qtgui_msg_push_button
+  parameters:
+    comment: ''
+    gui_hint: 0,0
+    label: '''Send'''
+    msgName: '"pressed"'
+    relBackgroundColor: default
+    relFontColor: default
+    type: int
+    value: '42'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [16, 16]
+    rotation: 0
+    state: enabled
+- name: qtgui_compass_0
+  id: qtgui_compass
+  parameters:
+    affinity: ''
+    alias: ''
+    backgroundColor: default
+    comment: ''
+    fullNeedle: '1'
+    gui_hint: 2,3
+    min_size: '250'
+    name: '''Compass'''
+    needleBodyColor: black
+    needleTipColor: red
+    position: '1'
+    scaleColor: black
+    setDebug: 'False'
+    update_time: '0.10'
+    usemsg: 'True'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 1024]
+    rotation: 0
+    state: enabled
+- name: qtgui_ledindicator_0
+  id: qtgui_ledindicator
+  parameters:
+    affinity: ''
+    alias: ''
+    cellalignment: '1'
+    comment: ''
+    gui_hint: 2,0
+    label: '''LED'''
+    maxSize: '40'
+    offColor: red
+    onColor: green
+    position: '1'
+    state: 'False'
+    verticalalignment: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 704]
+    rotation: 0
+    state: enabled
+- name: variable_qtgui_azelplot_0
+  id: variable_qtgui_azelplot
+  parameters:
+    backgroundColor: white
+    comment: ''
+    dotColor: ro
+    gui_hint: 3,1
+    label: '''AzEl'''
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 1216]
+    rotation: 0
+    state: enabled
+- name: variable_qtgui_distanceradar_0
+  id: variable_qtgui_distanceradar
+  parameters:
+    backgroundColor: black
+    comment: ''
+    fontColor: white
+    gui_hint: 3,0
+    label: '''Radar'''
+    ringColor: red
+    ticklabels: '[''20'', ''40'', ''60'', ''80'', ''100'']'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [600, 1120]
+    rotation: 0
+    state: enabled
+
+connections:
+- [blocks_message_strobe_0, strobe, qtgui_ledindicator_0, state]
+- [blocks_message_strobe_1, strobe, qtgui_dialgauge_0, value]
+- [blocks_message_strobe_1, strobe, qtgui_levelgauge_0, value]
+- [blocks_message_strobe_2, strobe, qtgui_compass_0, angle]
+- [blocks_message_strobe_3, strobe, variable_qtgui_distanceradar_0, radius]
+- [blocks_message_strobe_4, strobe, variable_qtgui_azelplot_0, azel]
+- [check, state, blocks_message_debug_0, print]
+- [dial, value, blocks_message_debug_0, print]
+- [edit, msg, blocks_message_debug_0, print]
+- [push, pressed, blocks_message_debug_0, print]
+- [switch, state, blocks_message_debug_0, print]
+- [toggle, state, blocks_message_debug_0, print]
+- [tuner, valueout, blocks_message_debug_0, print]
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.12.0

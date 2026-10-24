@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRC Web — Sign in</title>
+<link rel="icon" href="/static/favicon.svg">
+<link rel="stylesheet" href="/static/css/app.css">
+<script src="/static/js/login.js" defer></script>
+</head>
+<body>
+<div class="login-wrap">
+  <form class="login-card" id="login">
+    <h1><img src="/static/favicon.svg" width="26" height="26" alt="">GRC Web</h1>
+    <p>GNU Radio Companion in the browser. Sign in to continue.</p>
+    <label for="user">User</label>
+    <input id="user" name="user" autocomplete="username" autofocus required>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    <button class="btn primary" type="submit">Sign in</button>
+    <div class="login-error" id="error" role="alert"></div>
+  </form>
+</div>
+</body>
+</html>
