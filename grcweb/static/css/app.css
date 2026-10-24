@@ -260,7 +260,12 @@ textarea { resize: vertical; font-family: var(--mono); }
 .lib .item:hover { background: var(--accent-soft); }
 .lib .item.deprecated { color: var(--muted); text-decoration: line-through; }
 .lib .item .key { color: var(--muted); font-size: 11px; margin-left: 6px; }
-.lib-results .item { padding-left: 12px; }
+.lib .item.sel { background: var(--accent); color: #fff; }
+.lib .item.sel .key { color: #e5ecff; }
+.lib mark { background: rgba(255, 196, 0, .38); color: inherit; border-radius: 2px; }
+.lib .item.sel mark { background: rgba(255, 255, 255, .28); }
+.lib summary .count { color: var(--muted); font-weight: 400; font-size: 11px; margin-left: 6px; }
+.lib-count { padding: 2px 12px 6px; font-size: 11px; }
 
 /* ---------- bottom panels ---------- */
 .bottom { display: grid; grid-template-columns: 1fr 5px 380px; background: var(--panel); min-height: 0; }

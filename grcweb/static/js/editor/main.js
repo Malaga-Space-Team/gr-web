@@ -510,7 +510,7 @@ class App {
       ['↑ / ↓', 'Change the type of the block (e.g. complex/float)'],
       ['+ / −', 'More / fewer ports'],
       ['Enter, double click', 'Block properties'],
-      ['Ctrl+F', 'Search blocks (Enter adds the first one)'],
+      ['Ctrl+F', 'Search blocks: ↑/↓ choose a result, Enter adds it'],
       ['F5 / F6 / F7', 'Generate, execute, kill'],
       ['Wheel, Shift+wheel', 'Scroll'],
       ['Ctrl+wheel, Ctrl +/−', 'Zoom (Ctrl+0 fit, Ctrl+1 100%)'],
