@@ -111,7 +111,7 @@ def main(argv=None):
     user.add_argument('action', choices=['list', 'add', 'passwd', 'del'])
     user.add_argument('name', nargs='?')
     user.add_argument('--admin', action='store_true', help='may stop flow graphs of other users')
-    user.add_argument('--password', help=argparse.SUPPRESS)  # for scripted setups/tests
+    user.add_argument('--password', help=argparse.SUPPRESS)  # non-interactive use
     user.set_defaults(func=cmd_user)
 
     args = parser.parse_args(argv)

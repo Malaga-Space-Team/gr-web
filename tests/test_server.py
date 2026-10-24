@@ -107,7 +107,7 @@ async def run_checks(base):
             assert r.status == 302
         print('ok  anonymous requests are refused')
 
-        # --- brute force throttling (on a separate client address key: user name)
+        # --- repeated wrong passwords lock the login
         intruder = Client(base, 'bob')
         for _ in range(5):
             status, _ = await intruder.login('wrong-password')

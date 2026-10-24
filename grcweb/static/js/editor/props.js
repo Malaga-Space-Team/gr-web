@@ -209,7 +209,7 @@ export async function openProps(app, doc, name) {
         if (typed !== null && again.value !== typed) again.value = typed;
         again.focus();
         if (selection && again.setSelectionRange && selection[0] !== null) {
-          try { again.setSelectionRange(selection[0], selection[1]); } catch (e) { /* select */ }
+          try { again.setSelectionRange(selection[0], selection[1]); } catch (e) { /* not a text field */ }
         }
       }
     }
