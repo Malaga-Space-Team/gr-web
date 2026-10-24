@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Small DOM toolkit: element builder, dialogs, menus, toasts, tooltips, icons, theme.
 'use strict';
 

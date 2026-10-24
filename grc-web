@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
 # GRC Web launcher. Creates its Python environment on first use, on top of the
 # Python that has GNU Radio installed (its packages stay visible).
 #
@@ -25,12 +27,19 @@ find_python() {
 
 if [ ! -x "$VENV/bin/python" ]; then
     PYTHON="$(find_python)" || {
-        echo "No Python with GNU Radio found (set GRCWEB_PYTHON=/path/to/python3)." >&2
+        echo "No Python with GNU Radio Companion found." >&2
+        echo "Install GNU Radio 3.10 (with GRC), or point GRCWEB_PYTHON to its python3." >&2
         exit 1
     }
     echo "Creating $VENV with $PYTHON ..." >&2
-    "$PYTHON" -m venv --system-site-packages "$VENV"
-    "$VENV/bin/pip" install --quiet -r "$HERE/requirements.txt"
+    "$PYTHON" -m venv --system-site-packages "$VENV" || {
+        echo "Could not create the virtual environment (Debian/Ubuntu: sudo apt install python3-venv)." >&2
+        exit 1
+    }
+fi
+# aiohttp may already come from the distribution (python3-aiohttp); otherwise install it
+if ! "$VENV/bin/python" -c 'import aiohttp' >/dev/null 2>&1; then
+    "$VENV/bin/python" -m pip install --quiet --disable-pip-version-check -r "$HERE/requirements.txt"
 fi
 
 export PYTHONPATH="$HERE${PYTHONPATH:+:$PYTHONPATH}"

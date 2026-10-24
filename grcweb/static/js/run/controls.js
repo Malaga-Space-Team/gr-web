@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Run window components for the QT GUI widgets (controls and indicators).
 'use strict';
 

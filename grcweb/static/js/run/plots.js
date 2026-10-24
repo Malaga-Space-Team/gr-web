@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // WebGL2 plots for the web GUI sinks.
 //
 // All plots share one WebGL context (browsers only allow a handful): each plot

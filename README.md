@@ -1,221 +1,317 @@
 # GRC Web
 
-GNU Radio Companion en el navegador. Editas flowgraphs, los ejecutas y ves las
-gráficas en tiempo real desde una página web, sin X11 forwarding ni escritorio
-remoto. Todo el procesado se hace en el servidor; al navegador solo le llegan
-los datos ya reducidos que se dibujan (espectros, trazas, filas de waterfall…).
+**GNU Radio Companion in the browser.** Design, run and watch GNU Radio flow
+graphs on a remote machine from any web browser: no X11 forwarding, no remote
+desktop. All signal processing runs on the server; the browser only receives
+the reduced data it draws (spectra, traces, waterfall rows…), so the plots
+stay smooth even over modest network links.
 
-GRC Web **no reimplementa GRC**: usa el core de GNU Radio Companion sin
-modificar (`gnuradio.grc.core`). La carga de bloques (incluidos los OOT), la
-evaluación de parámetros, la validación, la lectura/escritura de `.grc` y la
-generación de código son las del GRC de escritorio. Un `.grc` guardado desde la
-web es idéntico, byte a byte, al que guardaría GRC.
+![The editor](docs/screenshots/editor.png)
 
-```
-Navegador ── HTTPS/WebSocket ──► servidor grc-web (Python, aiohttp)
-  editor SVG                       │  gnuradio.grc.core (sin modificar)
-  gráficas WebGL2                  │  ├─ plataforma "editor": bloques originales
-                                   │  └─ plataforma "run": bloques Qt GUI → web
-                                   ▼
-                         proceso del flowgraph (Python generado por GRC)
-                         + grcweb.runtime (sinks y widgets web) ── socket unix ──► servidor
-```
+GRC Web is **not a re-implementation of GRC**. It runs on top of the
+unmodified GNU Radio Companion core (`gnuradio.grc.core`): block discovery
+(including out-of-tree modules), parameter evaluation, validation, `.grc`
+reading/writing and code generation are exactly those of the desktop
+application. A flow graph saved from the browser is byte-for-byte the file
+GRC itself would write, so you can switch between both freely.
 
-## Requisitos
+| Running flow graph inside the editor | Plots and widgets (dark theme) |
+|---|---|
+| ![Run window](docs/screenshots/editor-run-window.png) | ![Float sinks](docs/screenshots/run-dark.png) |
+| **Block properties, validated live by the GRC core** | **Message widgets and indicators** |
+| ![Properties](docs/screenshots/properties.png) | ![Widgets](docs/screenshots/widgets.png) |
 
-* GNU Radio 3.10 con su Python (probado con 3.10.12, Python 3.14, Arch Linux).
-* `aiohttp` (lo instala el lanzador en un entorno virtual que ve los paquetes del sistema).
-* Un navegador moderno. Las gráficas usan WebGL2 y, si no está disponible
-  (algunos escritorios remotos o máquinas virtuales), un dibujado Canvas 2D equivalente.
+## Features
 
-## Puesta en marcha
+* **Editor that behaves like GRC**: block library with search, drag-and-drop,
+  connecting ports by dragging, live-validated properties (errors shown like
+  in GRC), undo/redo, copy/paste, rotate, enable/disable/bypass, variables
+  panel, console, generate, hier blocks, GRC keyboard shortcuts, light and
+  dark themes, SVG/PNG export of the diagram.
+* **Python blocks and modules** edited in a built-in code editor; the GRC core
+  re-extracts ports and parameters when you apply.
+* **Execution from the browser**: the generated flow graph runs as a process
+  on the server. Its GUI opens in a window laid out from the *GUI hints* and
+  *QT GUI Tab Widgets*, like the Qt window. It keeps running if you close the
+  window or lose the connection; reopen it at any time.
+* **Plots written from scratch in WebGL2** (with an automatic Canvas 2D
+  fallback): time, frequency, waterfall, constellation, histogram, number,
+  vector, time raster, eye, combined *QT GUI Sink* and auto-correlation, with
+  zoom, pan, autoscale, max/min hold, averaging, FFT size and window, triggers
+  and tags, colour maps and PNG snapshots.
+* **Multi-user with login**: every page requires an account. Users see which
+  flow graphs are running; only the owner or an admin can stop them.
+* **Out-of-tree modules** (Soapy, gr-satellites, gr-osmosdr, your own) are
+  found the same way GRC finds them.
+* **Autosave**: open documents, including unsaved changes, survive a server restart.
+* **No external front-end dependencies**: no CDN, no npm, no build step. It
+  works on servers without Internet access.
+
+## Requirements
+
+* Linux (macOS should work but is untested; Windows is not supported).
+* GNU Radio 3.10 including GNU Radio Companion, and the Python it is
+  installed for (tested with 3.10.12 and Python 3.14). For example:
+  * Debian / Ubuntu: `sudo apt install gnuradio python3-venv`
+  * Fedora: `sudo dnf install gnuradio`
+  * Arch Linux: `sudo pacman -S gnuradio gnuradio-companion`
+  * conda / radioconda: `conda install -c conda-forge gnuradio`
+* [aiohttp](https://docs.aiohttp.org/). The launcher installs it in a virtual
+  environment unless your distribution already provides it (`python3-aiohttp`).
+* A recent web browser (Firefox, Chrome, Edge, Safari).
+
+## Quick start
 
 ```bash
-cd ~/grc-web
-./grc-web user add diego --admin      # pide la contraseña (mínimo 8 caracteres)
+git clone https://github.com/Malaga-Space-Team/gr-web.git
+cd gr-web
+./grc-web user add alice --admin      # asks for a password (8+ characters)
 ./grc-web serve                       # http://127.0.0.1:8410
 ```
 
-El primer arranque crea `.venv/` con el Python que tiene GNU Radio
-(`GRCWEB_PYTHON=/ruta/python3` para elegir otro). Opciones útiles de `serve`:
+On first use `./grc-web` creates `.venv/` on top of the Python that has GNU
+Radio (its packages stay visible). Set `GRCWEB_PYTHON=/path/to/python3` to
+choose another interpreter, e.g. a conda environment.
 
-| Opción | Uso |
+As an alternative to the launcher, install it as a package in an environment
+where `import gnuradio` works:
+
+```bash
+pip install .
+grc-web serve
+```
+
+### Options
+
+| `grc-web serve` option | Meaning |
 |---|---|
-| `--host 0.0.0.0` | escuchar en todas las interfaces (por defecto solo `127.0.0.1`) |
-| `--port N` | puerto (8410) |
-| `--tls` | HTTPS con el certificado creado por `grc-web cert` |
-| `--certfile/--keyfile` | HTTPS con tu propio certificado |
-| `--root DIR` | carpetas que muestra el explorador de ficheros (repetible; por defecto tu `$HOME`) |
+| `--host 0.0.0.0` | listen on all interfaces (default: `127.0.0.1` only) |
+| `--port N` | port (default 8410) |
+| `--tls` | HTTPS with the certificate created by `grc-web cert` |
+| `--certfile FILE --keyfile FILE` | HTTPS with your own certificate |
+| `--root DIR` | folder offered by the file browser (repeatable; default: your home) |
 
-La configuración persistente va en `~/.config/grc-web/config.json` (mismos
-nombres: `host`, `port`, `certfile`, `keyfile`, `roots`, `session_idle_hours`,
-`max_runs_per_user`).
+Persistent settings can go in `~/.config/grc-web/config.json` with the same
+names (`host`, `port`, `certfile`, `keyfile`, `roots`) plus
+`session_idle_hours` and `max_runs_per_user`.
 
-### Acceso remoto
+## Remote access
 
-1. **Túnel SSH (recomendado, nada expuesto a la red):**
+1. **SSH tunnel (recommended, nothing is exposed to the network):**
    ```bash
-   ssh -L 8410:127.0.0.1:8410 usuario@servidor
+   ssh -L 8410:127.0.0.1:8410 user@sdr-host
    ```
-   y abrir `http://localhost:8410` en tu portátil.
-2. **HTTPS directo:**
+   then open `http://localhost:8410` on your laptop.
+2. **Direct HTTPS:**
    ```bash
-   ./grc-web cert servidor.midominio 192.168.1.50   # certificado autofirmado
+   ./grc-web cert sdr-host.example.org 192.168.1.50   # self-signed certificate
    ./grc-web serve --host 0.0.0.0 --tls
    ```
-3. Detrás de un proxy inverso con TLS (nginx, Caddy): reenviar también el
-   WebSocket `/ws` y la cabecera `X-Forwarded-Proto`.
+3. **Behind a reverse proxy** that terminates TLS (nginx, Caddy…): forward the
+   `/ws` WebSocket as well and set the `X-Forwarded-Proto` header.
 
-Sin TLS y escuchando fuera de localhost, el servidor avisa de que las
-contraseñas viajarían en claro.
+If the server listens beyond localhost without TLS, it warns that passwords
+would travel in clear text.
 
-### Como servicio
+### Running it as a service
 
 ```bash
 mkdir -p ~/.config/systemd/user && cp contrib/grc-web.service ~/.config/systemd/user/
 systemctl --user daemon-reload && systemctl --user enable --now grc-web
-loginctl enable-linger $USER
+loginctl enable-linger "$USER"     # keep it running after logging out
 ```
 
-### Módulos OOT (Soapy, gr-satellites, gr-osmosdr, propios…)
+Edit the path and options in the unit file first. Environment variables
+(`GRC_BLOCKS_PATH`, `PYTHONPATH`, …) go in `Environment=` lines.
 
-Se detectan igual que en GRC, porque es GRC quien carga los bloques: los
-ficheros `.block.yml` de `<prefijo>/share/gnuradio/grc/blocks`, de
-`GRC_BLOCKS_PATH` y de `[grc] local_blocks_path / global_blocks_path` en la
-configuración de GNU Radio, más los hier blocks de `~/.local/state/gnuradio`.
-
-* Instalado en el mismo prefijo que GNU Radio (paquete de la distribución,
-  `cmake -DCMAKE_INSTALL_PREFIX=/usr`): aparece sin hacer nada.
-* Instalado en otro prefijo (`/usr/local`, `/opt/...`): igual que con GRC,
-  exporta `GRC_BLOCKS_PATH` y `PYTHONPATH` antes de arrancar el servidor (en el
-  servicio systemd, con líneas `Environment=`). Los flowgraphs heredan ese entorno.
-* Si instalas algo con el servidor en marcha, pulsa *Reload block library* en la
-  barra (no hace falta reiniciar; los flowgraphs abiertos se recargan).
-
-Los bloques de hardware (Soapy, UHD…) se ejecutan en el servidor, así que usan
-los dispositivos conectados a esa máquina, con los permisos (udev) del usuario
-que lanza `grc-web`.
-
-## Usuarios y seguridad
+## Users and security
 
 ```bash
-./grc-web user list | add NOMBRE [--admin] | passwd NOMBRE | del NOMBRE
+./grc-web user list
+./grc-web user add NAME [--admin]
+./grc-web user passwd NAME
+./grc-web user del NAME
 ```
 
-* Todo (páginas, ficheros estáticos, API y WebSocket) exige sesión; la única
-  página pública es el login.
-* Contraseñas con scrypt; sesiones en cookie `HttpOnly`, `SameSite=Strict` (y
-  `Secure` con HTTPS), caducan tras 12 h de inactividad.
-* Tras 5 intentos fallidos el login se bloquea con espera creciente (por usuario y por IP).
-* Se rechazan peticiones y WebSockets de otro origen; cabeceras CSP,
-  `X-Frame-Options` y `nosniff`.
-* Cada usuario tiene sus documentos abiertos. Todos ven qué flowgraphs están
-  en marcha; solo su dueño o un admin pueden pararlos.
+* Everything (pages, static files, API and WebSocket) requires a session;
+  the login page is the only public page.
+* Passwords are hashed with scrypt. Sessions use `HttpOnly`,
+  `SameSite=Strict` cookies (plus `Secure` over HTTPS) and expire after
+  12 hours of inactivity.
+* After 5 failed attempts the login is locked, with increasing delays, per
+  user name and per client address.
+* Cross-origin requests and WebSockets are rejected. The server also sends
+  CSP, `X-Frame-Options` and `nosniff` headers.
+* Each user has their own open documents.
 
-Importante: igual que GRC, la herramienta ejecuta código arbitrario (bloques
-Python, expresiones, flowgraphs) **con el usuario del sistema que lanza el
-servidor**. Da cuentas solo a quien podría tener ya una shell en esa máquina.
+**Important:** like GRC itself, GRC Web runs arbitrary code (Python blocks,
+expressions, flow graphs) **as the operating system user that runs the
+server**. Only give accounts to people you would trust with a shell on that
+machine. See [SECURITY.md](SECURITY.md).
 
-## Uso
+## Using it
 
-**Editor** (mismo modelo que GRC): librería de bloques con búsqueda a la
-derecha, lienzo en el centro, consola y variables abajo. Doble clic abre las
-propiedades, que se validan en vivo con el core (los errores salen en rojo
-igual que en GRC). El bloque de Python embebido se edita con un editor de
-código integrado; al aplicar, el core vuelve a extraer puertos y parámetros.
-Atajos de teclado como en GRC (botón `?` de la barra para verlos todos).
+**Editor.** The block library is on the right, the canvas in the middle and
+the console and variables at the bottom. Double click a block (or press
+Enter) to edit its properties. The `?` button lists all keyboard and mouse
+shortcuts, which follow GRC (E/D/B enable/disable/bypass, arrows rotate and
+change types, F5/F6/F7 generate/execute/kill…). Several users or browser
+tabs can work against the same server; your open documents are autosaved
+every few seconds to `~/.local/state/grc-web/workspaces/`.
 
-Varios usuarios o pestañas del navegador comparten el estado del servidor.
-Los documentos abiertos, con cambios sin guardar, se guardan cada 5 s en
-`~/.local/state/grc-web/workspaces/` y se recuperan si el servidor se reinicia.
+**Execute (F6).** The flow graph window opens as a floating window, or in its
+own browser tab with the "open in a new tab" button. The run menu in the
+toolbar lists every running flow graph so you can reconnect later.
 
-**Ejecutar** (F6): se abre una ventana flotante (o una pestaña, botón
-"abrir aparte") con la interfaz del flowgraph, colocada según los *GUI hints*
-y las *QT GUI Tab Widget*, como la ventana Qt. El flowgraph sigue corriendo
-aunque cierres la ventana o se corte la conexión; vuelves a verlo desde el
-menú de ejecuciones.
+**Plots.**
 
-**Gráficas**: arrastrar = zoom de un recuadro, clic derecho = deshacer zoom,
-rueda = zoom en X (Mayús: en Y), Mayús+arrastrar = desplazar. Cada gráfica
-tiene pausa, autoescala, rejilla y captura PNG; la de frecuencia añade
-max/min hold, promediado, tamaño de FFT y ventana; la de tiempo, el panel de
-trigger; el waterfall, mapa de colores y rango de intensidad. Doble clic en
-frecuencia/waterfall envía la frecuencia por el puerto `freq`, como Qt.
+| Action | Effect |
+|---|---|
+| Drag | box zoom |
+| Right click | reset zoom |
+| Wheel / Shift+wheel | zoom X / zoom Y |
+| Shift+drag | pan |
+| Double click (frequency and waterfall plots) | send that frequency on the `freq` message port, like the Qt sinks |
 
-## Bloques Qt GUI soportados
+Each plot also has pause, autoscale, grid and snapshot buttons, plus
+sink-specific controls: trigger panel, FFT settings, colour map and
+intensity range.
 
-Al ejecutar desde la web, los bloques Qt GUI se sustituyen por equivalentes
-web con los mismos parámetros y puertos (el `.grc` no cambia):
+## Out-of-tree modules
 
-* Sinks: Time, Frequency, Waterfall, Constellation, Histogram, Number,
-  Vector, Time Raster, Eye, QT GUI Sink (combinado) y Fast Auto-Correlator.
-  Incluye entradas de mensajes (PDU), triggers Free/Auto/Normal/Tag con
-  retardo, visualización de tags y múltiples entradas.
-* Controles: Range, Chooser, Check Box, Push Button, Entry, Label, Toggle
+Blocks are loaded by GRC itself, so OOT modules appear just as they do in
+the desktop application. GRC reads the `.block.yml` files from:
+
+* `<prefix>/share/gnuradio/grc/blocks`;
+* `GRC_BLOCKS_PATH`;
+* `[grc] local_blocks_path` and `global_blocks_path` in the GNU Radio configuration;
+* the hier block folder (`~/.local/state/gnuradio`).
+
+* Installed in the same prefix as GNU Radio (distribution packages,
+  `cmake -DCMAKE_INSTALL_PREFIX=/usr`): nothing to do.
+* Installed elsewhere (`/usr/local`, `/opt/...`): as with GRC, export
+  `GRC_BLOCKS_PATH` and `PYTHONPATH` before starting the server. The flow
+  graphs inherit its environment.
+* Installed while the server is running: press *Reload block library* in the
+  toolbar. There is no need to restart, and open documents are reloaded.
+
+Hardware blocks (Soapy, UHD…) run on the server, so they use the devices
+attached to that machine, with the permissions (udev rules) of the user
+running `grc-web`.
+
+## Qt GUI blocks
+
+When a flow graph is executed from the browser, its Qt GUI blocks are
+replaced by web equivalents with the same parameters and ports. The `.grc`
+file is not modified.
+
+* **Sinks**: Time, Frequency, Waterfall, Constellation, Histogram, Number,
+  Vector, Time Raster, Eye, QT GUI Sink and Fast Auto-Correlator. They
+  support message (PDU) inputs, Free/Auto/Normal/Tag triggers with delay,
+  tag display and multiple inputs.
+* **Controls**: Range, Chooser, Check Box, Push Button, Entry, Label, Toggle
   Button, Toggle Switch, Msg CheckBox, Msg Push Button, Dial, Digital Number
-  Control, Message Edit Box.
-* Indicadores: LED, Level Gauge, Dial Gauge, Compass, Distance Radar, Az-El
-  Plot, Graphic Item. Tab Widget y GUI hints para la colocación.
+  Control and Message Edit Box.
+* **Indicators**: LED, Level Gauge, Dial Gauge, Compass, Distance Radar,
+  Az-El Plot and Graphic Item.
+* **Layout**: Tab Widget and GUI hints.
 
-Los bloques que necesitan Qt y no tienen versión web (BER curve sink, Graphic
-Overlay, `uhd_msg_push_button`, widgets Qt de módulos OOT) se reemplazan por
-un marcador con los mismos puertos: el flowgraph funciona pero ese bloque no
-muestra nada.
+Qt blocks without a web version (BER curve sink, Graphic Overlay,
+`uhd_msg_push_button`, Qt widgets of OOT modules) are replaced by a
+placeholder with the same ports. The flow graph still runs, but that block
+shows nothing.
 
-### Limitaciones conocidas
+### Known limitations
 
-* Hier blocks generados como *Hier Block (QT GUI)*: su código contiene Qt y se
-  ejecutan como marcador. Los hier blocks normales funcionan.
-* Flowgraphs en C++: se ejecutan a través de sus plantillas Python.
-* Código Qt escrito a mano dentro de bloques Python o snippets no se muestra
-  (el proceso corre con `QT_QPA_PLATFORM=offscreen`, sin ventanas en el servidor).
-* Salida Bokeh GUI no soportada.
+* Hier blocks generated as *Hier Block (QT GUI)* contain Qt code and run as
+  placeholders; regular hier blocks work.
+* C++ flow graphs are executed through their Python templates.
+* Hand-written Qt code in Python blocks or snippets is not displayed. Flow
+  graphs run with `QT_QPA_PLATFORM=offscreen`, so no window ever opens on
+  the server.
+* Bokeh GUI output is not supported.
 
-## Rendimiento
+## Performance
 
-Las gráficas, igual que en Qt, toman una instantánea de las últimas muestras
-en cada periodo de actualización; el resto se consume sin procesar. Lo que
-viaja por la red son vectores ya reducidos (como máximo 4096 puntos por
-gráfica, filas de waterfall cuantizadas a 8 bits), con política "el último
-frame gana" en el proceso, en el servidor y por cliente: una conexión lenta
-pierde frames intermedios pero nunca frena al flowgraph.
+Like the Qt sinks, the web sinks take a snapshot of the latest samples once
+per update period and consume everything else untouched. What travels to the
+browser is already reduced:
 
-Medido en esta máquina (`python tests/perf.py`): 20 Msps con FFT 4096,
-waterfall 2048, tiempo y constelación → unos 2,8 Mbit/s hacia el navegador a
-40 frames/s y ~25 % de un núcleo de CPU adicional en el proceso del flowgraph.
+* at most 4096 points per plot;
+* waterfall rows quantized to 8 bits.
 
-## Pruebas
+Every stage (flow graph process, server, each browser connection) keeps only
+the latest frame. A slow connection loses intermediate frames but never
+slows the flow graph down.
 
-```bash
-.venv/bin/python tests/make_flowgraphs.py          # regenera tests/flowgraphs/*.grc
-.venv/bin/python tests/run_examples.py tests/flowgraphs   # ejecuta cada uno con el runtime web
-.venv/bin/python tests/test_server.py               # login, permisos, edición, ejecución, hier blocks
-.venv/bin/python tests/perf.py                      # coste de CPU a alta tasa
+As a reference, `tests/perf.py` on a 12-thread desktop CPU used a 20 Msps
+complex stream feeding a frequency sink (FFT 4096), a waterfall, a time sink
+and a constellation sink. The results:
+
+* about 2.8 Mbit/s to the browser at 40 frames per second;
+* about a quarter of one CPU core on top of the same flow graph with null sinks.
+
+## How it works
+
+```
+Browser  ── HTTPS / WebSocket ──►  grc-web server (Python, aiohttp)
+  SVG editor                          │  gnuradio.grc.core (unmodified)
+  WebGL2 plots                        │  ├─ "editor" platform: original blocks
+                                      │  └─ "run" platform: Qt GUI blocks → web blocks
+                                      ▼
+                          flow graph process (Python generated by GRC)
+                          + grcweb.runtime (web sinks/widgets) ── unix socket ──► server
 ```
 
-Prueba de interfaz con Firefox real (editor, ejecución, gráficas, widgets,
-bloques Python). Con `xvfb-run` hay WebGL; con `--headless` se prueba el
-dibujado Canvas 2D:
+```
+grcweb/
+  platforms.py   GRC platforms (editor and run) on the unmodified core
+  translate.py   Qt GUI blocks → web templates in the "run" platform
+  document.py    an open flow graph: editing operations, undo, diffs
+  serialize.py   JSON views of blocks, ports and parameters
+  layout.py      GUI hints and tab widgets → run window layout
+  runner.py      generation, child process, link with the runtime
+  server.py      aiohttp: login, files, WebSocket, autosave
+  auth.py        users (scrypt), sessions, login throttling
+  runtime/       imported by the generated flow graph: web sinks and widgets
+  static/        dependency-free front-end (editor, run window, WebGL plots)
+tests/           runtime, server, browser and performance tests
+contrib/         systemd unit
+```
+
+## Development and tests
+
+```bash
+.venv/bin/python tests/make_flowgraphs.py                # rebuild tests/flowgraphs/*.grc
+.venv/bin/python tests/run_examples.py tests/flowgraphs  # run each one through the web runtime
+.venv/bin/python tests/test_server.py                    # login, permissions, editing, runs, hier blocks
+.venv/bin/python tests/perf.py                           # CPU cost at a high sample rate
+```
+
+Browser test with a real Firefox (editor, execution, plots, widgets, Python
+blocks). Under `xvfb-run` Firefox has WebGL; `--headless` exercises the
+Canvas 2D fallback:
 
 ```bash
 xvfb-run -a -s "-screen 0 1600x1000x24" .venv/bin/python tests/test_ui.py
 .venv/bin/python tests/test_ui.py --headless
 ```
 
-`tests/bidi.py` es el cliente WebDriver BiDi mínimo que usan estas pruebas.
+Contributions are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Estructura
+## License
 
-```
-grcweb/
-  platforms.py   plataformas GRC (editor y run) sobre el core sin modificar
-  translate.py   bloques Qt GUI → plantillas web en la plataforma "run"
-  document.py    flowgraph abierto: operaciones de edición, deshacer, diffs
-  serialize.py   vistas JSON de bloques/puertos/parámetros (lógica de GRC)
-  layout.py      GUI hints y pestañas → layout de la ventana de ejecución
-  runner.py      generación, proceso hijo, enlace con el runtime
-  server.py      aiohttp: login, ficheros, WebSocket, autoguardado
-  auth.py        usuarios (scrypt), sesiones, límite de intentos
-  runtime/       importado por el flowgraph generado: sinks y widgets web
-  static/        frontend sin dependencias externas (editor, ventana de ejecución, WebGL)
-```
+Copyright © 2026 Málaga Space Team.
+
+GRC Web is free software: you can redistribute it and/or modify it under the
+terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version, the same license as GNU Radio. It is distributed in the hope that
+it will be useful, but WITHOUT ANY WARRANTY. See [LICENSE](LICENSE) for the
+full text.
+
+GRC Web uses GNU Radio and GNU Radio Companion at run time; they are not
+part of this repository. A few display helpers in `grcweb/serialize.py` are
+adapted from GNU Radio Companion and keep their original copyright notice.
+GRC Web is an independent project, not affiliated with or endorsed by the
+GNU Radio project.

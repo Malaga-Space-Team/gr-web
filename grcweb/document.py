@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """An open flow graph: GRC core FlowGraph + undo history + change tracking.
 
 All editing goes through the GRC core API (new_block, connect, Param.set_value,

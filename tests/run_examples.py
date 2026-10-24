@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Run .grc flow graphs headless through the web runtime and report what arrives.
 
 Usage: python tests/run_examples.py [--seconds N] FILE_OR_DIR...

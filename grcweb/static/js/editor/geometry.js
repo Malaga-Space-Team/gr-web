@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Block geometry, following gnuradio-companion's GTK canvas (grc/gui/canvas/block.py
 // and port.py) so that coordinates stored in .grc files look the same here.
 'use strict';

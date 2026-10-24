@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // GRC Web editor: documents, toolbar, panels and keyboard shortcuts.
 'use strict';
 

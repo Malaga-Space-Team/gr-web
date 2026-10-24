@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Server-side file browser: open/save flow graphs, pick files for parameters,
 // upload from / download to the local computer.
 'use strict';

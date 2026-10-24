@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Floating window showing a running flow graph (the run page in an iframe),
 // the web equivalent of the Qt window that gnuradio-companion opens.
 'use strict';

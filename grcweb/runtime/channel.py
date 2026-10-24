@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Link between a running flow graph and the grc-web server.
 
 Plot frames are "latest wins": a sink overwrites its pending frame if the

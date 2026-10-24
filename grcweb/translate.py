@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Turn the Qt GUI blocks of the *run* platform into web GUI blocks.
 
 Only the code templates change. Parameters, ports, asserts and variable

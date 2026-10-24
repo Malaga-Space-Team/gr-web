@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Command line: ``python -m grcweb serve`` and user management."""
 
 import argparse

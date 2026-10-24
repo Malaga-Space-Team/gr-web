@@ -5,11 +5,29 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "grc-web"
 dynamic = ["version"]
-description = "GNU Radio Companion in the browser, on top of the unmodified GRC core"
+description = "GNU Radio Companion in the browser: edit, run and watch flow graphs remotely"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "GPL-3.0-or-later" }
+authors = [{ name = "Málaga Space Team" }]
+keywords = ["gnuradio", "gnu-radio-companion", "grc", "sdr", "dsp", "webgl"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Telecommunications Industry",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: JavaScript",
+    "Topic :: Communications :: Ham Radio",
+    "Topic :: Scientific/Engineering",
+]
 dependencies = ["aiohttp>=3.9"]
+
+[project.urls]
+Homepage = "https://github.com/Malaga-Space-Team/gr-web"
+Issues = "https://github.com/Malaga-Space-Team/gr-web/issues"
 
 [project.scripts]
 grc-web = "grcweb.__main__:main"

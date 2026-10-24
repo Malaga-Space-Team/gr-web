@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Minimal WebDriver BiDi client to drive a headless Firefox in UI tests.
 
 Only what the tests need: navigate, evaluate JavaScript, real pointer/keyboard

@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """aiohttp application: login, static files and the WebSocket API."""
 
 import asyncio

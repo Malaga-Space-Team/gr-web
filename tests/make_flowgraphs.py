@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Build the test flow graphs in tests/flowgraphs with the GRC core API.
 
 They cover every Qt GUI block that has a web version, tabs and GUI hints,
@@ -53,32 +56,33 @@ def complex_sinks(p):
     b = Builder(p, 'web_complex_sinks', 'Complex sinks')
     samp = 'samp_rate'
     b.doc.set_params('samp_rate', {'value': '256000'})
-    b.block('qtgui_tab_widget', 10, 300, id='tabs', num_tabs='2', label0="'Spectrum'", label1="'Time'",
+    b.doc.move({'samp_rate': (192, 8)})
+    b.block('qtgui_tab_widget', 8, 480, id='tabs', num_tabs='2', label0="'Spectrum'", label1="'Time'",
             gui_hint='1,0,1,2')
-    b.block('variable_qtgui_range', 200, 10, id='freq', value='10000', start='-100000', stop='100000',
+    b.block('variable_qtgui_range', 304, 8, id='freq', value='10000', start='-100000', stop='100000',
             step='1000', label="'Tone frequency'", gui_hint='0,0,1,1')
-    b.block('variable_qtgui_range', 400, 10, id='noise', value='0.05', start='0', stop='1', step='0.01',
+    b.block('variable_qtgui_range', 488, 8, id='noise', value='0.05', start='0', stop='1', step='0.01',
             label="'Noise'", gui_hint='0,1,1,1')
-    b.block('variable_qtgui_chooser', 600, 10, id='wave', value='analog.GR_COS_WAVE', type='raw',
+    b.block('variable_qtgui_chooser', 664, 8, id='wave', value='analog.GR_COS_WAVE', type='raw',
             num_opts='3', option0='analog.GR_COS_WAVE', label0="'Cosine'", option1='analog.GR_SQR_WAVE',
             label1="'Square'", option2='analog.GR_TRI_WAVE', label2="'Triangle'", label="'Waveform'")
-    b.block('variable_qtgui_check_box', 800, 10, id='enable_noise', value='True', type='bool',
+    b.block('variable_qtgui_check_box', 880, 8, id='enable_noise', value='True', type='bool',
             true='True', false='False', label="'Enable noise'")
-    b.block('variable_qtgui_label', 1000, 10, id='freq_label', value='freq', type='real',
+    b.block('variable_qtgui_label', 1064, 8, id='freq_label', value='freq', type='real',
             label="'Frequency is'")
-    src = b.block('analog_sig_source_x', 20, 120, type='complex', samp_rate=samp, waveform='wave',
+    src = b.block('analog_sig_source_x', 8, 232, type='complex', samp_rate=samp, waveform='wave',
                   freq='freq', amp='1', offset='0')
-    nz = b.block('analog_noise_source_x', 20, 260, type='complex', noise_type='analog.GR_GAUSSIAN',
+    nz = b.block('analog_noise_source_x', 8, 384, type='complex', noise_type='analog.GR_GAUSSIAN',
                  amp='noise if enable_noise else 0')
-    add = b.block('blocks_add_xx', 300, 180, type='complex', num_inputs='2')
-    thr = b.block('blocks_throttle2', 450, 180, type='complex', samples_per_second=samp)
-    freq = b.block('qtgui_freq_sink_x', 700, 100, type='complex', fftsize='2048', bw=samp,
+    add = b.block('blocks_add_xx', 248, 320, type='complex', num_inputs='2')
+    thr = b.block('blocks_throttle2', 352, 328, type='complex', samples_per_second=samp)
+    freq = b.block('qtgui_freq_sink_x', 584, 232, type='complex', fftsize='2048', bw=samp,
                    average='0.2', name="'Spectrum'", gui_hint='tabs@0: 0,0,1,1', ymin='-120', ymax='10')
-    wf = b.block('qtgui_waterfall_sink_x', 700, 250, type='complex', fftsize='1024', bw=samp,
+    wf = b.block('qtgui_waterfall_sink_x', 584, 352, type='complex', fftsize='1024', bw=samp,
                  name="'Waterfall'", gui_hint='tabs@0: 1,0,1,1')
-    time_ = b.block('qtgui_time_sink_x', 700, 400, type='complex', size='512', srate=samp,
+    time_ = b.block('qtgui_time_sink_x', 584, 472, type='complex', size='512', srate=samp,
                     name="'Time'", gui_hint='tabs@1: 0,0,1,1', nconnections='1', ymin='-1.5', ymax='1.5')
-    const = b.block('qtgui_const_sink_x', 700, 550, type='complex', size='512', name="'Constellation'",
+    const = b.block('qtgui_const_sink_x', 584, 592, type='complex', size='512', name="'Constellation'",
                     gui_hint='tabs@1: 0,1,1,1')
     b.connect(src, add, '0', '0')
     b.connect(nz, add, '0', '1')

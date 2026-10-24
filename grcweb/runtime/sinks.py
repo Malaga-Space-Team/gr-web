@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Web replacements for the QT GUI sinks.
 
 Like the Qt sinks, they only look at the stream once per update period: a

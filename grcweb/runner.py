@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Execution of flow graphs from the browser.
 
 A run takes a snapshot of the document, loads it into the run platform (Qt GUI

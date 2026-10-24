@@ -1,4 +1,13 @@
-"""JSON views of GRC core objects for the browser."""
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+"""JSON views of GRC core objects for the browser.
+
+num_to_str(), truncate() and pretty_print() are adapted from GNU Radio
+Companion (grc/gui/Utils.py and grc/gui/canvas/param.py), Copyright 2008-2015
+Free Software Foundation, Inc., GPL-2.0-or-later, so that parameters are shown
+on the blocks exactly as gnuradio-companion shows them.
+"""
 
 import numbers
 

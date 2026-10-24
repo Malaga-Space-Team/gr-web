@@ -7,8 +7,8 @@ Description=GRC Web (GNU Radio Companion in the browser)
 After=network-online.target
 
 [Service]
-# Adjust the path to where grc-web was cloned, and the options (e.g. --host 0.0.0.0 --tls)
-ExecStart=%h/grc-web/grc-web serve
+# Adjust the path to where gr-web was cloned, and the options (e.g. --host 0.0.0.0 --tls)
+ExecStart=%h/gr-web/grc-web serve
 Restart=on-failure
 RestartSec=3
 

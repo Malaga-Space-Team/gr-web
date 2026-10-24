@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Browser test: drives Firefox through the editor and the run window.
 
 Needs firefox; run it under xvfb-run to get WebGL (headless Firefox falls back

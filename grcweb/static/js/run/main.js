@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Run window: lays out the GUI blocks of a running flow graph (GUI hints and
 // tab widgets, like the Qt window) and feeds them with live data.
 'use strict';

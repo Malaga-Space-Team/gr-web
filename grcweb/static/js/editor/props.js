@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // Block properties dialog: live validation through the GRC core, like the GTK dialog.
 'use strict';
 

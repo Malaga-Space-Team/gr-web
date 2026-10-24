@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """End-to-end checks of the server: authentication, permissions, editing and runs.
 
 Starts its own server on a free port with a throw-away configuration, so it

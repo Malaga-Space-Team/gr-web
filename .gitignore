@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 # files written by "Generate" while testing
 tests/flowgraphs/*.py
+build/
+*.egg-info/

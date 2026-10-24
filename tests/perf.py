@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """CPU cost of the web sinks at a high sample rate.
 
 Builds a flow graph (fast noise -> throttle -> frequency, waterfall, time and

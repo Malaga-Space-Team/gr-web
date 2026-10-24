@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Runtime imported by flow graphs generated for the browser.
 
 ``make()`` is called from the code generated for the Qt GUI blocks (see

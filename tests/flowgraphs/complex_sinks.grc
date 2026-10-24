@@ -47,7 +47,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [800, 8]
+    coordinate: [880, 8]
     rotation: 0
     state: enabled
 - name: freq
@@ -68,7 +68,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [200, 8]
+    coordinate: [304, 8]
     rotation: 0
     state: enabled
 - name: freq_label
@@ -84,7 +84,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [1000, 8]
+    coordinate: [1064, 8]
     rotation: 0
     state: enabled
 - name: noise
@@ -105,7 +105,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [400, 8]
+    coordinate: [488, 8]
     rotation: 0
     state: enabled
 - name: samp_rate
@@ -117,7 +117,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [200, 12]
+    coordinate: [192, 8]
     rotation: 0
     state: enabled
 - name: wave
@@ -147,7 +147,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [600, 8]
+    coordinate: [664, 8]
     rotation: 0
     state: enabled
 - name: analog_noise_source_x_0
@@ -166,7 +166,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [16, 256]
+    coordinate: [8, 384]
     rotation: 0
     state: enabled
 - name: analog_sig_source_x_0
@@ -189,7 +189,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [16, 120]
+    coordinate: [8, 232]
     rotation: 0
     state: enabled
 - name: blocks_add_xx_0
@@ -207,7 +207,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [304, 176]
+    coordinate: [248, 320]
     rotation: 0
     state: enabled
 - name: blocks_throttle2_0
@@ -228,7 +228,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [448, 176]
+    coordinate: [352, 328]
     rotation: 0
     state: enabled
 - name: qtgui_const_sink_x_0
@@ -320,7 +320,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [704, 552]
+    coordinate: [584, 592]
     rotation: 0
     state: enabled
 - name: qtgui_freq_sink_x_0
@@ -401,7 +401,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [704, 96]
+    coordinate: [584, 232]
     rotation: 0
     state: enabled
 - name: qtgui_time_sink_x_0
@@ -498,7 +498,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [704, 400]
+    coordinate: [584, 472]
     rotation: 0
     state: enabled
 - name: qtgui_waterfall_sink_x_0
@@ -559,7 +559,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [704, 248]
+    coordinate: [584, 352]
     rotation: 0
     state: enabled
 - name: tabs
@@ -593,7 +593,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [8, 304]
+    coordinate: [8, 480]
     rotation: 0
     state: enabled
 

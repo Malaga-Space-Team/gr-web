@@ -1,3 +1,6 @@
+// Copyright 2026 Málaga Space Team
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 // WebSocket client: request/response RPC, server events and binary plot frames.
 'use strict';
 

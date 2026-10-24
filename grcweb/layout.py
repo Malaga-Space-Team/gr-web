@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Window layout of a running flow graph, computed from the GUI hints.
 
 This mirrors what the generated Qt code does: every GUI block goes into a

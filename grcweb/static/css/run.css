@@ -1,3 +1,6 @@
+/* Copyright 2026 Málaga Space Team
+   SPDX-License-Identifier: GPL-3.0-or-later */
+
 /* Run window: layout of the GUI items, plots and widgets. */
 
 body.run-page { overflow: hidden; }

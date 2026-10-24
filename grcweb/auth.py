@@ -1,3 +1,6 @@
+# Copyright 2026 Málaga Space Team
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Users, password hashing, login sessions and brute-force throttling.
 
 The web UI can execute arbitrary Python on the host (Python blocks,
