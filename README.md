@@ -133,6 +133,9 @@ Edit the path and options in the unit file first. Environment variables
 ./grc-web user del NAME
 ```
 
+Changes apply to a running server immediately; the sessions of a deleted
+user end at once.
+
 * Everything (pages, static files, API and WebSocket) requires a session;
   the login page is the only public page.
 * Passwords are hashed with scrypt. Sessions use `HttpOnly`,

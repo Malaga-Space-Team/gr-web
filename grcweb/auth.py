@@ -56,13 +56,25 @@ class UserStore:
     def __init__(self, path: Path = None):
         self.path = path or (config_dir() / 'users.json')
         self.users = {}
+        self._mtime = None
         self.load()
 
     def load(self):
-        if self.path.exists():
+        try:
+            self._mtime = self.path.stat().st_mtime_ns
             self.users = json.loads(self.path.read_text()).get('users', {})
-        else:
+        except FileNotFoundError:
+            self._mtime = None
             self.users = {}
+
+    def refresh(self):
+        """Pick up changes made with ``grc-web user ...`` while the server runs."""
+        try:
+            mtime = self.path.stat().st_mtime_ns
+        except FileNotFoundError:
+            mtime = None
+        if mtime != self._mtime:
+            self.load()
 
     def save(self):
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -104,11 +116,17 @@ class UserStore:
         self.save()
 
     def verify(self, name: str, password: str) -> bool:
+        self.refresh()
         user = self.users.get(name)
         ok = check_password(password, user['hash'] if user else _DUMMY_HASH)
         return bool(user) and ok
 
+    def exists(self, name: str) -> bool:
+        self.refresh()
+        return name in self.users
+
     def is_admin(self, name: str) -> bool:
+        self.refresh()
         return bool(self.users.get(name, {}).get('admin'))
 
 

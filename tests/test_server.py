@@ -87,6 +87,12 @@ async def expect_error(coro, text):
 
 
 WORK = None
+ENV = None
+
+
+def manage(*args):
+    subprocess.run([sys.executable, '-m', 'grcweb', 'user'] + list(args), cwd=ROOT, env=ENV, check=True,
+                   stdout=subprocess.DEVNULL)
 
 
 async def run_checks(base):
@@ -211,18 +217,30 @@ async def run_checks(base):
         assert alice.frames > before + 3, 'the flow graph with the hier block streams data'
         await alice.call('run.stop', run=run['id'])
         print('ok  hier blocks are generated, loaded and executed')
+
+        # --- users managed with the command line while the server runs
+        carol = Client(base, 'carol')
+        manage('add', 'carol', '--password', 'carol-password-1')
+        status, _ = await carol.login('carol-password-1')
+        assert status == 200, 'a user added while the server runs can log in'
+        manage('del', 'carol')
+        async with carol.http.get(base + '/api/library') as r:
+            assert r.status == 401, 'the session of a deleted user ends'
+        await carol.close()
+        print('ok  users added or deleted from the command line apply without a restart')
     finally:
         for c in (alice, bob, root):
             await c.close()
 
 
 def main():
-    global WORK
+    global WORK, ENV
     config = tempfile.mkdtemp(prefix='grcweb-test-')
     WORK = os.path.join(config, 'work')
     os.makedirs(WORK)
     env = dict(os.environ, GRCWEB_CONFIG_DIR=config, GRCWEB_STATE_DIR=os.path.join(config, 'state'),
                GRC_HIER_PATH=os.path.join(config, 'hier'))
+    ENV = env
     python = sys.executable
     for user, password in PASSWORDS.items():
         args = [python, '-m', 'grcweb', 'user', 'add', user, '--password', password]

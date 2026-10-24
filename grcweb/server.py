@@ -327,7 +327,8 @@ class Server:
             async for msg in ws:
                 if msg.type != WSMsgType.TEXT:
                     continue
-                if self.sessions.get(request.cookies.get(COOKIE)) is None:
+                current = self.sessions.get(request.cookies.get(COOKIE))
+                if current is None or not self.users.exists(current.user):
                     client.send_json({'ev': 'logout'})
                     break
                 try:
@@ -605,6 +606,9 @@ def make_app(server):
     @web.middleware
     async def security(request, handler):
         session = server.sessions.get(request.cookies.get(COOKIE))
+        if session is not None and not server.users.exists(session.user):
+            server.sessions.delete(session.sid)  # the user was deleted
+            session = None
         request['session'] = session
         path = request.path
         if session is None and path not in PUBLIC_PATHS:
@@ -655,8 +659,8 @@ def make_app(server):
 def serve(settings):
     server = Server(settings)
     if not server.users.users:
-        raise SystemExit('No users configured. Create one first:\n'
-                         '  grc-web user add <name> --admin')
+        # users added later with "grc-web user add" are picked up without a restart
+        log.warning('No users yet. Create one with:  grc-web user add <name> --admin')
     app = make_app(server)
     ssl_context = None
     if settings.tls:
