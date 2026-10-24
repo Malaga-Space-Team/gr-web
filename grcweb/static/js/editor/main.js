@@ -549,7 +549,7 @@ class App {
     runsBtn.addEventListener('click', () => this.runsMenu(runsBtn));
     const sep = () => el('span', { class: 'tb-sep' });
     bar.append(
-      el('div', { class: 'brand' }, el('img', { src: '/static/favicon.svg', alt: '' }), 'GRC Web'),
+      el('div', { class: 'brand' }, 'GRC Web'),
       b('new', 'New flow graph (Ctrl+N)', () => this.newDoc()),
       b('open', 'Open (Ctrl+O)', () => this.openDoc()),
       b('save', 'Save (Ctrl+S)', () => this.save()),

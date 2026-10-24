@@ -27,7 +27,7 @@ log = logging.getLogger(__name__)
 
 STATIC = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 COOKIE = 'grcweb_session'
-PUBLIC_PATHS = {'/login', '/api/login', '/static/css/app.css', '/static/js/login.js', '/static/favicon.svg'}
+PUBLIC_PATHS = {'/login', '/api/login', '/static/css/app.css', '/static/js/login.js'}
 MAX_ROWS_PENDING = 512
 AUTOSAVE_PERIOD = 5  # seconds
 CSP = ("default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; "
