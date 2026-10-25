@@ -1,7 +1,7 @@
 # Copyright 2026 Málaga Space Team
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""Browser test: drives Firefox through the editor and the run window.
+"""Browser test: drives Firefox through the editor, the run window and the terminal.
 
 Needs firefox; run it under xvfb-run to get WebGL (headless Firefox falls back
 to the 2D plots, which are tested that way):
@@ -219,6 +219,68 @@ async def test_python_block(b, base):
     await b.js('app.api.call("doc.close", {doc: app.active.id})')
 
 
+TERM_TEXT = """(() => {
+    const item = app.terminals.items.get(app.terminals.current);
+    if (!item || !item.view) return '';
+    const buf = item.view.term.buffer.active;
+    const lines = [];
+    for (let i = 0; i < buf.length; i++) lines.push(buf.getLine(i).translateToString(true));
+    return lines.join('\\n');
+})()"""
+
+
+async def test_terminal(b, base, shots):
+    await b.goto(base + '/')
+    await b.wait_for('window.app && app.active && app.api.connected')
+    await b.keys('`', modifiers=[KEYS['Control']])
+    await b.wait_for("document.querySelector('.term-pane:not(.hidden) .xterm') && app.terminals.items.size === 1")
+    await b.wait_for("document.activeElement && document.activeElement.closest('.term-pane')")
+    check(True, 'Ctrl+` opens a terminal in the bottom panel and focuses it')
+    await asyncio.sleep(1.5)  # the login shell prints its prompt
+    await b.keys('echo ui-$((6 * 7))' + KEYS['Enter'])
+    await b.wait_for("%s.includes('ui-42')" % TERM_TEXT)
+    check(True, 'typing in the terminal runs commands')
+    await b.keys('stty size' + KEYS['Enter'])
+    size = await b.js("(() => {const t = app.terminals.items.get(app.terminals.current).view.term; return t.rows + ' ' + t.cols})()")
+    await b.wait_for("%s.includes(%s)" % (TERM_TEXT, json.dumps(size)))
+    check(int(size.split()[1]) > 80, 'the shell gets the size of the panel ({})'.format(size))
+    await b.keys("printf '\\033[1;31mred \\033[32mgreen \\033[34mblue\\033[0m\\n'; ls --color=always /" + KEYS['Enter'])
+    await asyncio.sleep(1)
+    await b.screenshot(os.path.join(shots, 'terminal.png'))
+
+    await b.keys('`', modifiers=[KEYS['Control']])
+    await b.wait_for("document.activeElement === app.canvas.svg")
+    check(True, 'Ctrl+` again goes back to the canvas')
+
+    # the shell survives a reload, and its output comes back
+    term_id = await b.js('app.terminals.current')
+    await b.goto(base + '/')
+    await b.wait_for('window.app && app.api.connected && app.terminals.items.size === 1')
+    await b.js("app.terminals.show(%s)" % json.dumps(term_id))
+    await b.wait_for("%s.includes('ui-42')" % TERM_TEXT)
+    check(True, 'after a reload the terminal is still there with its output')
+
+    # the same shell in its own browser tab
+    await b.goto(base + '/terminal?id=' + term_id)
+    await b.wait_for("document.querySelector('.xterm-rows') && document.querySelector('.xterm-rows').textContent.includes('ui-42')")
+    title = await b.js('document.title')
+    check('GRC Web' in title, 'the terminal opens in its own page ({})'.format(title))
+    await b.goto(base + '/terminal?id=nonexistent')
+    await b.wait_for("document.querySelector('.term-missing')")
+
+    await b.goto(base + '/')
+    await b.wait_for('window.app && app.api.connected && app.terminals.items.size === 1')
+    await b.js("app.terminals.show(%s)" % json.dumps(term_id))
+    await b.wait_for("document.activeElement && document.activeElement.closest('.term-pane')")
+    await b.keys('exit' + KEYS['Enter'])
+    await b.wait_for("%s.includes('Shell exited with code 0')" % TERM_TEXT)
+    await b.wait_for("document.querySelector('.term-tab.exited')")
+    await b.keys(KEYS['Enter'])
+    await b.wait_for("app.terminals.items.size === 0 && !document.querySelector('.term-tab')")
+    check(await b.js("app.terminals.current") == 'console', 'exit, then Enter closes the terminal tab')
+    check(await b.js("app.api.call('term.list').then(l => l.length)") == 0, 'and the server forgets it')
+
+
 async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--headless', action='store_true')
@@ -248,6 +310,7 @@ async def main():
         await test_editor(browser, base, work, shots)
         await test_runs(browser, base, shots)
         await test_python_block(browser, base)
+        await test_terminal(browser, base, shots)
         errors = [line for line in browser.logs if line.startswith('error')]
         check(not errors, 'no JavaScript errors ({})'.format(errors[:3]))
         print('all UI checks passed; screenshots in', shots)

@@ -26,14 +26,17 @@ cd gr-web
 
 The front-end has no build step: edit the files under `grcweb/static/` and
 reload the page. Restart the server after changing Python code.
+`grcweb/static/vendor/` holds third-party files copied unchanged from their
+packages (see the README there); do not edit them.
 
 ## Guidelines
 
 * **Do not reimplement GRC.** Everything about blocks, parameters,
   validation, `.grc` files and code generation must go through
   `gnuradio.grc.core`. The browser only displays what the core says.
-* **Keep the front-end dependency-free**: plain ES modules, no frameworks,
-  no CDNs, no npm packages. GRC Web must keep working on servers without
+* **Keep the front-end self-contained**: plain ES modules, no frameworks,
+  no CDNs, no build step. The only third-party code is xterm.js, included in
+  `grcweb/static/vendor/`. GRC Web must keep working on servers without
   Internet access.
 * **Never block the GNU Radio scheduler.** Web sinks look at the stream once
   per update period, and publishing a frame must never wait for the network.

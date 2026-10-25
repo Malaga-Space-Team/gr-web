@@ -31,6 +31,8 @@ def cmd_serve(args):
         if not cert.exists():
             raise SystemExit('No certificate yet. Create one with:  grc-web cert')
         settings.certfile, settings.keyfile = str(cert), str(key)
+    if args.no_terminal:
+        settings.terminal = False
     if args.root:
         settings.roots = [os.path.realpath(os.path.expanduser(r)) for r in args.root]
     logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
@@ -100,6 +102,7 @@ def main(argv=None):
     serve.add_argument('--keyfile', help='TLS private key (PEM)')
     serve.add_argument('--tls', action='store_true', help='use the certificate made by "grc-web cert"')
     serve.add_argument('--root', action='append', help='folder shown in the file browser (repeatable)')
+    serve.add_argument('--no-terminal', action='store_true', help='disable the interactive terminal')
     serve.add_argument('-v', '--verbose', action='store_true')
     serve.set_defaults(func=cmd_serve)
 

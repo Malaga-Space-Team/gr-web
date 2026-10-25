@@ -6,7 +6,10 @@ GRC Web gives its users the full power of GNU Radio Companion: Python
 blocks, Python expressions in every parameter, and the execution of flow
 graphs. **Anyone with an account can run arbitrary code as the operating
 system user that runs the server.** This is by design; it cannot be
-sandboxed without taking away what makes GRC useful.
+sandboxed without taking away what makes GRC useful. The built-in terminal
+makes it explicit: it is a shell with those rights. Turning it off
+(`--no-terminal`, or `"terminal": false` in the configuration) removes the
+shell, not the ability to run code through flow graphs.
 
 The security features are therefore about keeping everybody else out:
 
@@ -15,6 +18,8 @@ The security features are therefore about keeping everybody else out:
 * session cookies are `HttpOnly`, `SameSite=Strict` and `Secure` over HTTPS;
 * repeated failed logins are throttled per user name and per address;
 * cross-origin requests and WebSockets are rejected;
+* a terminal belongs to the user who opened it: nobody else, admins
+  included, can see or type into it, and it ends when that user is deleted;
 * the server sends CSP, `X-Frame-Options` and `nosniff` headers.
 
 ## Recommended deployment

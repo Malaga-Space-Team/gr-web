@@ -1,7 +1,7 @@
 # Copyright 2026 Málaga Space Team
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-"""End-to-end checks of the server: authentication, permissions, editing and runs.
+"""End-to-end checks of the server: authentication, permissions, editing, runs and terminals.
 
 Starts its own server on a free port with a throw-away configuration, so it
 can run next to a real instance:  python tests/test_server.py
@@ -10,6 +10,7 @@ can run next to a real instance:  python tests/test_server.py
 import asyncio
 import json
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -84,6 +85,133 @@ async def expect_error(coro, text):
         assert text in str(error), error
         return
     raise AssertionError('expected an error containing ' + repr(text))
+
+
+class TermConnection:
+    """The byte stream of one terminal, as the browser sees it."""
+
+    def __init__(self, client, term_id):
+        self.client = client
+        self.term_id = term_id
+        self.output = b''
+        self.messages = []
+
+    async def open(self, cols=80, rows=24, origin=None):
+        url = self.client.base.replace('http', 'ws') + '/ws/term?id=' + self.term_id
+        self.ws = await self.client.http.ws_connect(url, headers={'Origin': origin or self.client.base})
+        await self.ws.send_str(json.dumps({'t': 'hello', 'cols': cols, 'rows': rows}))
+        self.reader = asyncio.ensure_future(self._read())
+        await self.wait_for(lambda: self.messages)
+        return self.messages[0]
+
+    async def _read(self):
+        async for msg in self.ws:
+            if msg.type == aiohttp.WSMsgType.BINARY:
+                self.output += msg.data
+            elif msg.type == aiohttp.WSMsgType.TEXT:
+                self.messages.append(json.loads(msg.data))
+
+    async def send(self, **message):
+        await self.ws.send_str(json.dumps(message))
+
+    async def wait_for(self, condition, timeout=10):
+        for _ in range(int(timeout * 20)):
+            if condition():
+                return
+            await asyncio.sleep(0.05)
+        raise AssertionError('timeout; output so far: {!r}'.format(self.output[-500:]))
+
+    async def close(self):
+        await self.ws.close()
+        await self.reader
+
+
+async def terminal_checks(alice, bob, base):
+    hello = await alice.call('hello')
+    assert hello['terminal'] and hello['terminals'] == [], hello['terminals']
+    info = await alice.call('term.new', cols=80, rows=24)
+    assert info['alive'] and info['number'] == 1, info
+    assert any(e['ev'] == 'term.opened' for e in alice.events)
+
+    term = TermConnection(alice, info['id'])
+    first = await term.open()
+    assert first['t'] == 'hello' and first['alive'], first
+    await term.send(t='in', d='echo grcweb-$((40 + 2))\n')
+    await term.wait_for(lambda: b'grcweb-42' in term.output)
+    await term.send(t='resize', cols=101, rows=31)
+    await term.send(t='in', d='stty size\n')
+    await term.wait_for(lambda: b'31 101' in term.output)
+    print('ok  terminal: input, output and resize')
+
+    # every byte of a large output arrives, in order
+    await term.send(t='in', d='seq 1 200000 | tail -c 2000000; echo seq-$((1 + 1))-done\n')
+    await term.wait_for(lambda: b'seq-2-done' in term.output, 30)
+    assert b'\r\n199999\r\n200000\r\n' in term.output
+    print('ok  terminal: large output arrives complete')
+
+    # flow control: while the browser asks to pause, the shell is not read
+    await term.send(t='pause')
+    await asyncio.sleep(0.2)
+    size = len(term.output)
+    await term.send(t='in', d='head -c 20000000 /dev/zero | tr "\\\\0" x; echo; echo flow-$((2 + 2))\n')
+    await asyncio.sleep(1)
+    assert len(term.output) == size, 'output arrived while paused'
+    await term.send(t='resume')
+    await term.wait_for(lambda: b'flow-4' in term.output, 30)
+    assert term.output.count(b'x') >= 20000000
+    print('ok  terminal: flow control pauses and resumes the shell')
+
+    # a reload attaches again and replays the recent output
+    await term.send(t='in', d='echo replay-$((5 + 5))\n')
+    await term.wait_for(lambda: b'replay-10' in term.output)
+    await term.close()
+    again = TermConnection(alice, info['id'])
+    first = await again.open()
+    assert first['replay'] > 0
+    await again.wait_for(lambda: len(again.output) >= first['replay'])
+    assert b'replay-10' in again.output and len(again.output) <= 512 * 1024 + 65536
+    print('ok  terminal: reconnecting replays the recent output')
+
+    # other users and other sites cannot reach it
+    intruder = TermConnection(bob, info['id'])
+    try:
+        await intruder.open()
+        raise AssertionError('bob attached to the terminal of alice')
+    except aiohttp.WSServerHandshakeError as error:
+        assert error.status == 404, error.status
+    await bob.call('term.close', term=info['id'])
+    assert [t['id'] for t in await alice.call('term.list')] == [info['id']], 'bob cannot close it'
+    assert await bob.call('term.list') == []
+    try:
+        await TermConnection(alice, info['id']).open(origin='http://evil.example')
+        raise AssertionError('cross-origin terminal accepted')
+    except aiohttp.WSServerHandshakeError as error:
+        assert error.status == 403, error.status
+    print('ok  terminal: private to its user, cross-origin refused')
+
+    # the shell exits: the browser and the other tabs are told
+    await again.send(t='in', d='exit 3\n')
+    await again.wait_for(lambda: any(m.get('t') == 'exit' for m in again.messages))
+    assert [m for m in again.messages if m.get('t') == 'exit'][0]['code'] == 3
+    await again.wait_for(lambda: any(e['ev'] == 'term.exited' for e in alice.events))
+    await alice.call('term.close', term=info['id'])
+    assert await alice.call('term.list') == []
+    await again.close()
+
+    # closing a terminal ends the processes started in it
+    info = await alice.call('term.new')
+    term = TermConnection(alice, info['id'])
+    await term.open()
+    await term.send(t='in', d='sleep 1000 & echo job-pid:$!:end\n')
+    await term.wait_for(lambda: re.search(rb'job-pid:(\d+):end', term.output))
+    pid = int(re.search(rb'job-pid:(\d+):end', term.output).group(1))
+    await alice.call('term.close', term=info['id'])
+    for _ in range(40):
+        if not os.path.exists('/proc/{}'.format(pid)):
+            break
+        await asyncio.sleep(0.1)
+    assert not os.path.exists('/proc/{}'.format(pid)), 'a job of a closed terminal survived'
+    print('ok  terminal: exit status reported, closing ends its processes')
 
 
 WORK = None
@@ -218,16 +346,29 @@ async def run_checks(base):
         await alice.call('run.stop', run=run['id'])
         print('ok  hier blocks are generated, loaded and executed')
 
+        await terminal_checks(alice, bob, base)
+
         # --- users managed with the command line while the server runs
         carol = Client(base, 'carol')
         manage('add', 'carol', '--password', 'carol-password-1')
         status, _ = await carol.login('carol-password-1')
         assert status == 200, 'a user added while the server runs can log in'
+        await carol.connect()
+        shell = TermConnection(carol, (await carol.call('term.new'))['id'])
+        await shell.open()
+        await shell.send(t='in', d='echo shell-pid:$$:end\n')
+        await shell.wait_for(lambda: re.search(rb'shell-pid:(\d+):end', shell.output))
+        pid = int(re.search(rb'shell-pid:(\d+):end', shell.output).group(1))
         manage('del', 'carol')
         async with carol.http.get(base + '/api/library') as r:
             assert r.status == 401, 'the session of a deleted user ends'
+        for _ in range(100):
+            if not os.path.exists('/proc/{}'.format(pid)):
+                break
+            await asyncio.sleep(0.1)
+        assert not os.path.exists('/proc/{}'.format(pid)), 'the terminal of a deleted user keeps running'
         await carol.close()
-        print('ok  users added or deleted from the command line apply without a restart')
+        print('ok  users added or deleted from the command line apply without a restart (and their shells end)')
     finally:
         for c in (alice, bob, root):
             await c.close()

@@ -232,6 +232,7 @@ const ICONS = {
   logout: 'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11',
   lib: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   panel: 'M3 4h18v16H3zM3 15h18',
+  term: 'M3 4h18v16H3zM7 9l3 3-3 3M12 15h5',
   runs: 'M4 6h16M4 12h16M4 18h10',
   pause: 'M7 5h3v14H7zM14 5h3v14h-3z',
   play: 'M7 4l13 8-13 8z',

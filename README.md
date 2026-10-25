@@ -20,6 +20,8 @@ GRC itself would write, so you can switch between both freely.
 | ![Run window](docs/screenshots/editor-run-window.png) | ![Float sinks](docs/screenshots/run-dark.png) |
 | **Block properties, validated live by the GRC core** | **Message widgets and indicators** |
 | ![Properties](docs/screenshots/properties.png) | ![Widgets](docs/screenshots/widgets.png) |
+| **A shell on the server, next to the console** | **A flow graph in its own browser tab** |
+| ![Terminal](docs/screenshots/terminal.png) | ![Run page](docs/screenshots/run-spectrum.png) |
 
 ## Features
 
@@ -34,6 +36,11 @@ GRC itself would write, so you can switch between both freely.
   on the server. Its GUI opens in a window laid out from the *GUI hints* and
   *QT GUI Tab Widgets*, like the Qt window. It keeps running if you close the
   window or lose the connection; reopen it at any time.
+* **Terminal**: shells on the server in the bottom panel, next to the
+  console, with colours and full-screen programs (`vim`, `htop`…). They keep
+  running when you reload or close the page and can be popped out to their
+  own browser tab. Handy for installing OOT modules, checking devices or
+  looking at files without a separate SSH session.
 * **Plots written from scratch in WebGL2** (with an automatic Canvas 2D
   fallback): time, frequency, waterfall, constellation, histogram, number,
   vector, time raster, eye, combined *QT GUI Sink* and auto-correlation, with
@@ -44,8 +51,9 @@ GRC itself would write, so you can switch between both freely.
 * **Out-of-tree modules** (Soapy, gr-satellites, gr-osmosdr, your own) are
   found the same way GRC finds them.
 * **Autosave**: open documents, including unsaved changes, survive a server restart.
-* **No external front-end dependencies**: no CDN, no npm, no build step. It
-  works on servers without Internet access.
+* **No CDN and no build step**: the server itself serves everything the
+  browser needs (the only third-party front-end code, xterm.js, is included),
+  so it works on servers without Internet access.
 
 ## Requirements
 
@@ -90,10 +98,11 @@ grc-web serve
 | `--tls` | HTTPS with the certificate created by `grc-web cert` |
 | `--certfile FILE --keyfile FILE` | HTTPS with your own certificate |
 | `--root DIR` | folder offered by the file browser (repeatable; default: your home) |
+| `--no-terminal` | disable the terminal |
 
 Persistent settings can go in `~/.config/grc-web/config.json` with the same
-names (`host`, `port`, `certfile`, `keyfile`, `roots`) plus
-`session_idle_hours` and `max_runs_per_user`.
+names (`host`, `port`, `certfile`, `keyfile`, `roots`, `terminal`) plus
+`session_idle_hours`, `max_runs_per_user` and `max_terminals_per_user`.
 
 ## Remote access
 
@@ -108,7 +117,8 @@ names (`host`, `port`, `certfile`, `keyfile`, `roots`) plus
    ./grc-web serve --host 0.0.0.0 --tls
    ```
 3. **Behind a reverse proxy** that terminates TLS (nginx, Caddy…): forward the
-   `/ws` WebSocket as well and set the `X-Forwarded-Proto` header.
+   WebSockets (`/ws` and `/ws/term`) as well and set the `X-Forwarded-Proto`
+   header.
 
 If the server listens beyond localhost without TLS, it warns that passwords
 would travel in clear text.
@@ -145,12 +155,13 @@ user end at once.
   user name and per client address.
 * Cross-origin requests and WebSockets are rejected. The server also sends
   CSP, `X-Frame-Options` and `nosniff` headers.
-* Each user has their own open documents.
+* Each user has their own open documents and terminals.
 
 **Important:** like GRC itself, GRC Web runs arbitrary code (Python blocks,
 expressions, flow graphs) **as the operating system user that runs the
-server**. Only give accounts to people you would trust with a shell on that
-machine. See [SECURITY.md](SECURITY.md).
+server**, and its terminal is a shell with those same rights. Only give
+accounts to people you would trust with a shell on that machine. See
+[SECURITY.md](SECURITY.md).
 
 ## Using it
 
@@ -167,6 +178,16 @@ every few seconds to `~/.local/state/grc-web/workspaces/`.
 **Execute (F6).** The flow graph window opens as a floating window, or in its
 own browser tab with the "open in a new tab" button. The run menu in the
 toolbar lists every running flow graph so you can reconnect later.
+
+**Terminal.** Ctrl+` (the key below Esc) or the terminal button in the
+toolbar opens a shell on the server in the bottom panel; press it again to go
+back to the canvas. *+ Terminal* opens more (up to 8 per user). It is your
+login shell, started in the first `--root` folder as the account that runs
+the server. It keeps running when you reload or close the page, and the
+recent output comes back when you return; *Pop out* shows the same shell in
+its own browser tab. Copy with Ctrl+Shift+C (or Ctrl+C while text is
+selected) and paste with Ctrl+V; right click for a menu. Closing its tab ends
+the shell and everything started from it, and so does restarting the server.
 
 **Plots.**
 
@@ -276,10 +297,12 @@ grcweb/
   serialize.py   JSON views of blocks, ports and parameters
   layout.py      GUI hints and tab widgets → run window layout
   runner.py      generation, child process, link with the runtime
-  server.py      aiohttp: login, files, WebSocket, autosave
+  terminal.py    shells on pseudo-terminals for the browser terminal
+  server.py      aiohttp: login, files, WebSockets, autosave
   auth.py        users (scrypt), sessions, login throttling
   runtime/       imported by the generated flow graph: web sinks and widgets
-  static/        dependency-free front-end (editor, run window, WebGL plots)
+  static/        front-end without build step (editor, run window, WebGL plots,
+                 terminal); vendor/ holds xterm.js
 tests/           runtime, server, browser and performance tests
 contrib/         systemd unit
 ```
@@ -289,12 +312,12 @@ contrib/         systemd unit
 ```bash
 .venv/bin/python tests/make_flowgraphs.py                # rebuild tests/flowgraphs/*.grc
 .venv/bin/python tests/run_examples.py tests/flowgraphs  # run each one through the web runtime
-.venv/bin/python tests/test_server.py                    # login, permissions, editing, runs, hier blocks
+.venv/bin/python tests/test_server.py                    # login, permissions, editing, runs, hier blocks, terminals
 .venv/bin/python tests/perf.py                           # CPU cost at a high sample rate
 ```
 
 Browser test with a real Firefox (editor, execution, plots, widgets, Python
-blocks). Under `xvfb-run` Firefox has WebGL; `--headless` exercises the
+blocks, terminal). Under `xvfb-run` Firefox has WebGL; `--headless` exercises the
 Canvas 2D fallback:
 
 ```bash
@@ -318,5 +341,7 @@ full text.
 GRC Web uses GNU Radio and GNU Radio Companion at run time; they are not
 part of this repository. A few display helpers in `grcweb/serialize.py` are
 adapted from GNU Radio Companion and keep their original copyright notice.
+The terminal uses [xterm.js](https://github.com/xtermjs/xterm.js) (MIT
+license), included in `grcweb/static/vendor/xterm/` with its license.
 GRC Web is an independent project, not affiliated with or endorsed by the
 GNU Radio project.

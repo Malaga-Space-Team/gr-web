@@ -22,6 +22,7 @@ from .config import state_dir
 from .document import Document, OpError
 from .platforms import build_platforms, collect_messages, install_messenger
 from .runner import RunManager
+from .terminal import TerminalManager
 
 log = logging.getLogger(__name__)
 
@@ -163,6 +164,7 @@ class Server:
         self._library_cache = None
         self.workspaces = {}
         self.runs = RunManager(settings, self._runs_changed)
+        self.terminals = TerminalManager(settings, self._terminal_event)
         self.all_clients = set()
 
     # ------------------------------------------------------------- helpers
@@ -176,6 +178,12 @@ class Server:
         while True:
             await asyncio.sleep(AUTOSAVE_PERIOD)
             self.save_workspaces()
+            for owner in {t.owner for t in self.terminals.terminals.values()}:
+                if not self.users.exists(owner):  # the user was deleted
+                    try:
+                        await self.terminals.close_user(owner)
+                    except Exception:
+                        log.exception('cannot close the terminals of %s', owner)
 
     def save_workspaces(self):
         for workspace in self.workspaces.values():
@@ -184,6 +192,11 @@ class Server:
                     workspace.save()
                 except Exception:
                     log.exception('autosave of %s failed', workspace.user)
+
+    def _terminal_event(self, owner, event, info):
+        workspace = self.workspaces.get(owner)
+        if workspace is not None:
+            workspace.broadcast({'ev': event, 'term': info})
 
     def _runs_changed(self):
         message = {'ev': 'runs', 'runs': self.runs.list()}
@@ -227,6 +240,9 @@ class Server:
 
     async def run_page(self, request):
         return web.FileResponse(os.path.join(STATIC, 'run.html'))
+
+    async def terminal_page(self, request):
+        return web.FileResponse(os.path.join(STATIC, 'terminal.html'))
 
     async def login_page(self, request):
         if request.get('session'):
@@ -274,6 +290,10 @@ class Server:
         except ValueError as error:
             return web.json_response({'ok': False, 'error': str(error)}, status=400)
         return web.json_response({'ok': True})
+
+    async def api_terminals(self, request):
+        user = request['session'].user
+        return web.json_response({'enabled': self.settings.terminal, 'terminals': self.terminals.list(user)})
 
     async def api_library(self, request):
         return web.Response(body=self.library(), content_type='application/json',
@@ -346,6 +366,53 @@ class Server:
             client.close()
         return ws
 
+    async def terminal_ws(self, request):
+        """Byte stream of one terminal. The browser sends JSON: hello (its size)
+        first, then input, resize and pause/resume (flow control)."""
+        session = request['session']
+        if not self.settings.terminal:
+            raise web.HTTPForbidden(text='The terminal is disabled on this server')
+        try:
+            terminal = self.terminals.get(session.user, request.query.get('id', ''))
+        except KeyError:
+            raise web.HTTPNotFound()
+        ws = web.WebSocketResponse(heartbeat=25, max_msg_size=8 * 1024 * 1024)
+        await ws.prepare(request)
+        attachment = None
+        try:
+            async for msg in ws:
+                if msg.type != WSMsgType.TEXT:
+                    continue
+                current = self.sessions.get(request.cookies.get(COOKIE))
+                if current is None or not self.users.exists(current.user):
+                    await ws.close(code=4401)
+                    break
+                try:
+                    message = json.loads(msg.data)
+                    kind = message.get('t')
+                    if kind == 'in':
+                        terminal.write(str(message.get('d', '')).encode('utf-8', 'replace'))
+                    elif kind == 'bin':  # mouse reports with bytes above 127
+                        terminal.write(str(message.get('d', '')).encode('latin-1', 'replace'))
+                    elif kind == 'resize':
+                        terminal.resize(message['cols'], message['rows'])
+                    elif kind in ('pause', 'resume') and attachment is not None:
+                        attachment.paused = kind == 'pause'
+                        terminal.flow_changed()
+                    elif kind == 'hello' and attachment is None:
+                        if terminal.alive:
+                            terminal.resize(message['cols'], message['rows'])
+                        replay = terminal.replay()
+                        attachment = terminal.attach(ws)
+                        attachment.send_json(json.dumps(dict(terminal.info(), t='hello', replay=len(replay))))
+                        attachment.push(replay)
+                except (ValueError, KeyError, TypeError, AttributeError):
+                    continue
+        finally:
+            if attachment is not None:
+                terminal.detach(attachment)
+        return ws
+
     async def dispatch(self, client, workspace, message):
         req_id = message.get('id')
         op = str(message.get('op', ''))
@@ -373,6 +440,7 @@ class Server:
             'gr_version': self.editor.config.version, 'roots': self.settings.roots,
             'docs': [doc.full_state() for doc in workspace.docs.values()],
             'runs': self.runs.list(),
+            'terminal': self.settings.terminal, 'terminals': self.terminals.list(client.user),
         }
 
     def _doc(self, workspace, args):
@@ -593,6 +661,29 @@ class Server:
         client.runs.discard(args.get('run'))
         return True
 
+    # ----------------------------------------------------------- terminals
+    def _check_terminal(self):
+        if not self.settings.terminal:
+            raise OpError('The terminal is disabled on this server')
+
+    async def op_term_new(self, client, workspace, args):
+        self._check_terminal()
+        try:
+            terminal = await self.terminals.create(client.user, int(args.get('cols') or 80), int(args.get('rows') or 24))
+        except (ValueError, OSError) as error:
+            raise OpError(str(error))
+        return terminal.info()
+
+    def op_term_list(self, client, workspace, args):
+        return self.terminals.list(client.user)
+
+    async def op_term_close(self, client, workspace, args):
+        try:
+            await self.terminals.close(client.user, args.get('term'))
+        except KeyError:
+            pass
+        return True
+
     def op_run_ui(self, client, workspace, args):
         run = self._run(args)
         if not run.send_process({'t': 'ui', 'name': args.get('name'), 'event': args.get('event'),
@@ -612,10 +703,10 @@ def make_app(server):
         request['session'] = session
         path = request.path
         if session is None and path not in PUBLIC_PATHS:
-            if path.startswith('/api/') or path == '/ws':
+            if path.startswith(('/api/', '/ws')):
                 raise web.HTTPUnauthorized()
             raise web.HTTPFound('/login')
-        if request.method not in ('GET', 'HEAD') or path == '/ws':
+        if request.method not in ('GET', 'HEAD') or path.startswith('/ws'):
             origin = request.headers.get('Origin')
             if origin and urlsplit(origin).netloc != request.host:
                 raise web.HTTPForbidden(text='Cross-origin request refused')
@@ -625,21 +716,24 @@ def make_app(server):
             response.headers.setdefault('X-Content-Type-Options', 'nosniff')
             response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
             response.headers.setdefault('Referrer-Policy', 'no-referrer')
-            if path.endswith(('.js', '.css', '.html')) or path in ('/', '/run'):
+            if path.endswith(('.js', '.css', '.html')) or path in ('/', '/run', '/terminal'):
                 response.headers.setdefault('Cache-Control', 'no-cache')
         return response
 
     app = web.Application(middlewares=[security], client_max_size=256 * 1024 * 1024)
     app.router.add_get('/', server.index)
     app.router.add_get('/run', server.run_page)
+    app.router.add_get('/terminal', server.terminal_page)
     app.router.add_get('/login', server.login_page)
     app.router.add_post('/api/login', server.api_login)
     app.router.add_post('/api/logout', server.api_logout)
     app.router.add_post('/api/password', server.api_password)
     app.router.add_get('/api/library', server.api_library)
+    app.router.add_get('/api/terminals', server.api_terminals)
     app.router.add_get('/api/files/download', server.api_download)
     app.router.add_post('/api/files/upload', server.api_upload)
     app.router.add_get('/ws', server.websocket)
+    app.router.add_get('/ws/term', server.terminal_ws)
     app.router.add_static('/static/', STATIC, show_index=False, follow_symlinks=False)
 
     async def on_startup(app):
@@ -650,6 +744,7 @@ def make_app(server):
         server.save_workspaces()
         for client in list(server.all_clients):
             await client.ws.close()
+        await server.terminals.shutdown()
         await server.runs.shutdown()
     app.on_startup.append(on_startup)
     app.on_shutdown.append(on_shutdown)

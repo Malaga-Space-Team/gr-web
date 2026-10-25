@@ -49,6 +49,9 @@ class Settings:
     session_idle_hours: float = 12.0
     session_max_days: float = 7.0
     max_runs_per_user: int = 4
+    # Interactive shells in the browser, running as the account of the server.
+    terminal: bool = True
+    max_terminals_per_user: int = 8
 
     @property
     def tls(self) -> bool:

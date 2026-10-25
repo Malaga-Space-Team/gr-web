@@ -38,6 +38,8 @@
   --plot-grid: #e6e8ec;
   --plot-axis: #9aa1ad;
   --plot-text: #3b4352;
+  --term-bg: #ffffff;
+  --term-fg: #1c2230;
   --mono: ui-monospace, "JetBrains Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, "DejaVu Sans", sans-serif;
   color-scheme: light;
@@ -78,6 +80,8 @@
   --plot-grid: #232833;
   --plot-axis: #4a5262;
   --plot-text: #b6becb;
+  --term-bg: #0f1216;
+  --term-fg: #e4e7ee;
   color-scheme: dark;
 }
 
@@ -276,8 +280,8 @@ textarea { resize: vertical; font-family: var(--mono); }
   font-weight: 600; font-size: 12px;
 }
 .panel-head .sp { flex: 1; }
-.panel-head .tabsel { display: flex; gap: 2px; }
-.panel-head .tabsel button { border: 0; background: transparent; padding: 2px 8px; border-radius: 4px; cursor: pointer; color: var(--muted); font-weight: 600; }
+.panel-head .tabsel { display: flex; gap: 2px; min-width: 0; overflow: hidden; }
+.panel-head .tabsel button { border: 0; background: transparent; padding: 2px 8px; border-radius: 4px; cursor: pointer; color: var(--muted); font-weight: 600; white-space: nowrap; }
 .panel-head .tabsel button.on { background: var(--panel); color: var(--text); }
 .console {
   margin: 0; padding: 6px 8px; overflow: auto; font: 12px/1.45 var(--mono);
@@ -286,6 +290,22 @@ textarea { resize: vertical; font-family: var(--mono); }
 .console .err { color: var(--danger); }
 .console .warn { color: var(--warn); }
 .console .grc { color: var(--accent); }
+
+/* terminals, in the bottom panel and in their own page */
+.panel-head .tabsel button.unread::after { content: ' •'; color: var(--accent); }
+.panel-head .term-tab { display: inline-flex; align-items: center; gap: 4px; }
+.panel-head .term-tab.exited > span:first-child { text-decoration: line-through; opacity: .7; }
+.panel-head .term-tab .x { border-radius: 3px; width: 16px; line-height: 16px; text-align: center; font-weight: 400; }
+.panel-head .term-tab .x:hover { background: var(--panel-3); color: var(--text); }
+.out-body { display: grid; min-height: 0; min-width: 0; }
+.out-body > * { grid-area: 1 / 1; min-height: 0; min-width: 0; }
+.term-pane { position: relative; background: var(--term-bg); overflow: hidden; }
+.term-host { position: absolute; inset: 4px 0 0 8px; }
+.term-host .xterm { height: 100%; }
+.term-host .xterm .xterm-viewport { background-color: transparent; } /* xterm.css paints it black */
+.term-page .term-pane { position: fixed; inset: 0; }
+.term-missing { padding: 24px; color: var(--muted); font-size: 14px; }
+
 .vars { overflow: auto; min-height: 0; }
 .vars table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .vars td, .vars th { padding: 3px 8px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }

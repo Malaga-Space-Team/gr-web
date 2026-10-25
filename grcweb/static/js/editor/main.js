@@ -14,6 +14,7 @@ import { Library } from './library.js';
 import { openProps } from './props.js';
 import { chooseFile } from './files.js';
 import { RunWindow } from './runwin.js';
+import { Terminals } from './terminals.js';
 
 class Doc {
   constructor(state) {
@@ -57,6 +58,7 @@ class App {
     this.varsEl = document.getElementById('vars');
     this.statusEl = document.getElementById('status');
     this.tabsEl = document.getElementById('tabs');
+    this.terminals = new Terminals(this);
     this._buildToolbar();
     this._buildHud();
     this._bindPanels();
@@ -95,6 +97,8 @@ class App {
         this.renderTabs();
         this.updateUser();
         this.updateRunButtons();
+        this.terminals.sync(hello.terminal, hello.terminals);
+        this.btn.term.classList.toggle('hidden', !hello.terminal);
         if (!this._welcomed) {
           this._welcomed = true;
           this.log(`<<< Welcome to GRC Web — GNU Radio ${hello.gr_version} >>>\n`, 'grc');
@@ -512,6 +516,8 @@ class App {
       ['Enter, double click', 'Block properties'],
       ['Ctrl+F', 'Search blocks: ↑/↓ choose a result, Enter adds it'],
       ['F5 / F6 / F7', 'Generate, execute, kill'],
+      ['Ctrl+` (key below Esc)', 'Go to the terminal (opens one) and back to the canvas'],
+      ['Terminal: Ctrl+Shift+C, Ctrl+V', 'Copy (also Ctrl+C when text is selected), paste'],
       ['Wheel, Shift+wheel', 'Scroll'],
       ['Ctrl+wheel, Ctrl +/−', 'Zoom (Ctrl+0 fit, Ctrl+1 100%)'],
       ['Middle drag, Space+drag', 'Pan'],
@@ -543,6 +549,7 @@ class App {
       bypass: b('bypass', 'Bypass (B)', () => this.setState('bypassed')),
       run: b('run', 'Execute the flow graph (F6)', () => this.run(), 'run'),
       stop: b('stop', 'Kill the flow graph (F7)', () => this.stop(), 'stop'),
+      term: b('term', 'Terminal (Ctrl+`)', () => this.terminals.toggle(), 'hidden'),
     };
     const runsBtn = el('button', { class: 'tb-btn', type: 'button', title: 'Running flow graphs', style: { width: 'auto', padding: '0 6px', display: 'inline-flex', gap: '3px' } },
       icon('runs'), this.btn.runsLabel = el('span', { style: { fontSize: '12px', fontWeight: 700, color: 'var(--ok)' } }));
@@ -567,6 +574,7 @@ class App {
       }),
       b('lib', 'Show/hide block library', () => document.getElementById('workspace').classList.toggle('lib-hidden')),
       b('panel', 'Show/hide console', () => document.getElementById('bottom').classList.toggle('collapsed')),
+      this.btn.term,
       el('span', { class: 'tb-spacer' }),
       b('theme', 'Light/dark theme', () => { toggleTheme(); this.canvas.redrawAll(); }),
       this.userEl = el('span', { class: 'tb-user' }),
@@ -627,12 +635,14 @@ class App {
     }
     while (this.consoleEl.childNodes.length > 4000) this.consoleEl.firstChild.remove();
     if (atBottom) this.consoleEl.scrollTop = this.consoleEl.scrollHeight;
+    this.terminals.consoleActivity();
   }
 
   showErrors() {
     const doc = this.active;
     if (!doc) return;
     document.getElementById('bottom').classList.remove('collapsed');
+    this.terminals.show('console');
     if (!doc.meta.errors.length) { this.log('>>> No errors.\n', 'grc'); return; }
     this.log(`>>> ${doc.meta.n_errors} error(s) in ${doc.meta.title}:\n`, 'err');
     this.log(doc.meta.errors.join('\n') + '\n', 'err');
@@ -710,8 +720,10 @@ class App {
 
   _bindKeys() {
     document.addEventListener('keydown', (e) => {
-      if (document.querySelector('.modal-back') || isTyping(e)) return;
+      if (document.querySelector('.modal-back')) return;
       const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && !e.altKey && e.code === 'Backquote') { e.preventDefault(); this.terminals.toggle(); return; }
+      if (isTyping(e)) return;
       const k = e.key;
       const run = (fn) => { e.preventDefault(); fn(); };
       if (ctrl) {

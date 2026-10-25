@@ -6,6 +6,7 @@
 <title>GRC Web</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/static/css/app.css">
+<link rel="stylesheet" href="/static/vendor/xterm/xterm.css">
 <script type="module" src="/static/js/editor/main.js"></script>
 </head>
 <body>
@@ -20,9 +21,15 @@
       <div class="splitter-h" id="split-bottom"></div>
       <div class="bottom" id="bottom">
         <div class="panel">
-          <div class="panel-head"><span>Console</span><span class="sp"></span>
+          <div class="panel-head">
+            <div class="tabsel" id="out-tabs"><button class="on" type="button" data-pane="console">Console</button></div>
+            <span class="sp"></span>
+            <button class="btn small hidden" type="button" id="term-pop" title="Open this terminal in a new browser tab">Pop out</button>
+            <button class="btn small hidden" type="button" id="term-new" title="New terminal (Ctrl+`)">+ Terminal</button>
             <button class="btn small" type="button" id="console-clear">Clear</button></div>
-          <pre class="console" id="console"></pre>
+          <div class="out-body" id="out-body">
+            <pre class="console" id="console"></pre>
+          </div>
         </div>
         <div class="splitter-v" id="split-vars"></div>
         <div class="panel vars-panel">
