@@ -338,13 +338,9 @@ export class Canvas {
     });
     svg.addEventListener('contextmenu', (e) => {
       e.preventDefault();
-      if (!this.doc) return;
-      const b = e.target.closest('[data-block]');
-      const c = e.target.closest('[data-conn]');
-      if (b && !this.doc.selection.has('b:' + b.dataset.block)) this.setSelection(['b:' + b.dataset.block]);
-      else if (c && !this.doc.selection.has('c:' + c.dataset.conn)) this.setSelection(['c:' + c.dataset.conn]);
-      this.lastPointer = [e.clientX, e.clientY];
-      this.app.canvasMenu(e.clientX, e.clientY, b ? 'block' : c ? 'conn' : 'canvas');
+      // a right press pans, or opens the menu when released without moving (_up)
+      if (this.rightPress) { this.rightPress = false; return; }
+      if (this.doc) this._menu(e.target, e.clientX, e.clientY);
     });
     svg.addEventListener('wheel', (e) => {
       if (!this.doc) return;
@@ -419,15 +415,28 @@ export class Canvas {
     return { block: b.dataset.block, key: port.dataset.port, dir: port.dataset.dir, node: port };
   }
 
+  _menu(target, x, y) {
+    const b = target.closest('[data-block]');
+    const c = target.closest('[data-conn]');
+    if (b && !this.doc.selection.has('b:' + b.dataset.block)) this.setSelection(['b:' + b.dataset.block]);
+    else if (c && !this.doc.selection.has('c:' + c.dataset.conn)) this.setSelection(['c:' + c.dataset.conn]);
+    this.lastPointer = [x, y];
+    this.app.canvasMenu(x, y, b ? 'block' : c ? 'conn' : 'canvas');
+  }
+
   _down(e) {
+    this.rightPress = e.button === 2;
     if (!this.doc) return;
     closeMenu();
     hideTooltip();
     this.svg.focus({ preventScroll: true });
     this.lastPointer = [e.clientX, e.clientY];
-    if (e.button === 1 || (e.button === 0 && this.space)) {
+    if (e.button === 1 || e.button === 2 || (e.button === 0 && this.space)) {
       e.preventDefault();
-      this.drag = { mode: 'pan', x: e.clientX, y: e.clientY, tx: this.doc.view.tx, ty: this.doc.view.ty };
+      this.drag = {
+        mode: 'pan', x: e.clientX, y: e.clientY, tx: this.doc.view.tx, ty: this.doc.view.ty,
+        menu: e.button === 2 ? e.target : null, moved: false,
+      };
       this.svg.setPointerCapture(e.pointerId);
       return;
     }
@@ -496,8 +505,15 @@ export class Canvas {
     const drag = this.drag;
     if (!drag) return;
     if (drag.mode === 'pan') {
-      this.doc.view.tx = drag.tx + e.clientX - drag.x;
-      this.doc.view.ty = drag.ty + e.clientY - drag.y;
+      const dx = e.clientX - drag.x;
+      const dy = e.clientY - drag.y;
+      if (!drag.moved) {
+        if (drag.menu && Math.hypot(dx, dy) < 4) return;
+        drag.moved = true;
+        this.svg.classList.add('panning');
+      }
+      this.doc.view.tx = drag.tx + dx;
+      this.doc.view.ty = drag.ty + dy;
       this.applyView();
       return;
     }
@@ -570,7 +586,10 @@ export class Canvas {
     if (!drag) return;
     this.drag = null;
     try { this.svg.releasePointerCapture(e.pointerId); } catch (err) { /* already released */ }
-    if (drag.mode === 'move') {
+    this.svg.classList.remove('panning');
+    if (drag.mode === 'pan') {
+      if (drag.menu && !drag.moved) this._menu(drag.menu, drag.x, drag.y);
+    } else if (drag.mode === 'move') {
       if (drag.moved && drag.positions) {
         const positions = {};
         for (const [name, pos] of drag.positions) {
@@ -618,6 +637,7 @@ export class Canvas {
     if (this.drag.path) this.drag.path.remove();
     if (this.drag.rect) this.drag.rect.remove();
     if (this.drag.mode === 'move') this.render();
+    this.svg.classList.remove('panning');
     this.drag = null;
     this._disarm();
   }

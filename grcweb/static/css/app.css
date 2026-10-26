@@ -202,6 +202,7 @@ textarea { resize: vertical; font-family: var(--mono); }
 /* ---------- canvas ---------- */
 .canvas-wrap { position: relative; overflow: hidden; background: var(--canvas-bg); min-height: 0; outline: none; }
 .canvas-wrap svg.fg { position: absolute; inset: 0; width: 100%; height: 100%; user-select: none; touch-action: none; }
+.canvas-wrap svg.fg.panning, .canvas-wrap svg.fg.panning * { cursor: grabbing; }
 .canvas-empty { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); pointer-events: none; text-align: center; }
 .canvas-hud {
   position: absolute; right: 10px; bottom: 10px;

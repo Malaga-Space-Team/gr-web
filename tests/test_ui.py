@@ -136,6 +136,7 @@ async def test_editor(b, base, work, shots):
     await b.keys(KEYS['ArrowRight'])
     await asyncio.sleep(0.4)
     await b.screenshot(os.path.join(shots, 'editor.png'))
+    await test_right_button(b, thr)
 
     await b.keys('s', modifiers=[KEYS['Control']])
     await b.wait_for("document.querySelector('.modal .files-list')")
@@ -146,6 +147,48 @@ async def test_editor(b, base, work, shots):
     await b.js("[...document.querySelectorAll('.modal .btn.primary')].pop().click(); true")
     await b.wait_for("app.active.meta.path.endsWith('built_in_browser.grc') && !app.active.meta.dirty")
     check(os.path.exists(os.path.join(work, 'built_in_browser.grc')), 'save as through the file dialog')
+
+
+EMPTY_POINT = '''(() => {
+  const r = app.canvas.svg.getBoundingClientRect();
+  for (let y = r.top + 40; y < r.bottom - 40; y += 20)
+    for (let x = r.left + 40; x < r.right - 40; x += 20) {
+      const t = document.elementFromPoint(x, y);
+      if (t && t.closest('svg.fg') && !t.closest('[data-block], [data-conn]')) return [x, y];
+    }
+})()'''
+VIEW = '[app.active.view.tx, app.active.view.ty]'
+MENU = "[...document.querySelectorAll('.menu button')].map(e => e.firstChild.textContent)"
+
+
+async def test_right_button(b, block):
+    x, y = await b.js(EMPTY_POINT)
+    tx, ty = await b.js(VIEW)
+    await b.drag(x, y, x + 120, y + 60, button=2)
+    await asyncio.sleep(0.3)
+    nx, ny = await b.js(VIEW)
+    check(abs(nx - tx - 120) < 1 and abs(ny - ty - 60) < 1 and not await b.js(MENU),
+          'right drag on the canvas pans it without a menu')
+    bx, by = await center(b, '[data-block="%s"] rect.body' % block)
+    pos = "(() => {const x = app.active.blocks.get('%s'); return [x.x, x.y]})()" % block
+    before = await b.js(pos)
+    await b.drag(bx, by, bx + 80, by - 40, button=2)
+    await asyncio.sleep(0.3)
+    nx2, ny2 = await b.js(VIEW)
+    check(abs(nx2 - nx - 80) < 1 and abs(ny2 - ny + 40) < 1 and await b.js(pos) == before
+          and not await b.js(MENU), 'right drag over a block pans and leaves the block in place')
+    await b.click(*(await center(b, '[data-block="%s"] rect.body' % block)), button=2)
+    await b.wait_for("document.querySelector('.menu')")
+    items = await b.js(MENU)
+    check('Properties' in items and await b.js('app.canvas.selectedBlocks()') == [block],
+          'right click on a block opens its menu')
+    await b.keys(KEYS['Escape'])
+    x, y = await b.js(EMPTY_POINT)
+    await b.click(x, y, button=2)
+    await b.wait_for("document.querySelector('.menu')")
+    check('Zoom to fit' in await b.js(MENU), 'right click on the canvas opens the canvas menu')
+    await b.keys(KEYS['Escape'])
+    check(await b.js(VIEW) == [nx2, ny2], 'right clicks do not move the view')
 
 
 async def start_run(b, base, flowgraph):

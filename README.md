@@ -168,7 +168,9 @@ accounts to people you would trust with a shell on that machine. See
 **Editor.** The block library is on the right, the canvas in the middle and
 the console and variables at the bottom. Searching the library filters it
 while keeping the categories of the matching blocks; ↑/↓ choose a result and
-Enter adds it. Double click a block (or press
+Enter adds it. Drag with the right mouse button (or the middle one, or
+Space+drag, or scroll) to move around the canvas; a right click without
+moving opens the menu. Double click a block (or press
 Enter) to edit its properties. The `?` button lists all keyboard and mouse
 shortcuts, which follow GRC (E/D/B enable/disable/bypass, arrows rotate and
 change types, F5/F6/F7 generate/execute/kill…). Several users or browser
